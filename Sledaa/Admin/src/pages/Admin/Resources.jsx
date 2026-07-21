@@ -1,25 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Button, Popover } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import Pdf from '../../components/common/Admin/Pdf';
 import AreYouSure from '../../components/Popup/AreYouSure';
 import AddDocument from '../../components/common/Admin/AddDocument';
 
-const resourcesData = [
-  { id: 1, title: 'Resume Tips', filename: 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' },
-  { id: 2, title: 'Modern Resume Template', filename: 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' },
-  { id: 3, title: 'Victorian Government Recruitment Process', filename: 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' },
-  { id: 4, title: 'A Guide To Job Search In AU', filename: 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' }
-];
-
 const Resources = () => {
+  const [resources, setResources] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [addResourcesOpen, setAddResourcesOpen] = useState(false);
+  const [selectedResourceId, setSelectedResourceId] = useState(null);
 
-  const handleMenuClick = (e) => {
+  const fetchResources = async () => {
+    try {
+      const response = await fetch('http://localhost:8081/api/resources');
+      if (response.ok) {
+        const data = await response.json();
+        setResources(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch resources", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchResources();
+  }, []);
+
+  const handleSave = async (formData) => {
+    const token = localStorage.getItem('jwt_token');
+    const response = await fetch('http://localhost:8081/api/resources', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || 'Failed to save resource');
+    }
+
+    fetchResources();
+  };
+
+  const handleMenuClick = (e, id) => {
     e.stopPropagation();
     setAnchorEl(e.currentTarget);
+    setSelectedResourceId(id);
   };
 
   const handleMenuClose = () => {
@@ -31,9 +61,26 @@ const Resources = () => {
     setDeleteConfirmOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     setDeleteConfirmOpen(false);
-    // Add real delete logic here
+    if (!selectedResourceId) return;
+
+    try {
+      const token = localStorage.getItem('jwt_token');
+      const response = await fetch(`http://localhost:8081/api/resources/${selectedResourceId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        fetchResources();
+      } else {
+        alert("Failed to delete resource");
+      }
+    } catch (error) {
+      console.error("Error deleting resource", error);
+    }
   };
 
   const open = Boolean(anchorEl);
@@ -49,7 +96,6 @@ const Resources = () => {
         fontFamily: 'Poppins, sans-serif',
       }}
     >
-      {/* Header Section */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '40px', flexWrap: 'wrap', gap: '20px' }}>
         <Typography
           sx={{
@@ -85,19 +131,17 @@ const Resources = () => {
         </Button>
       </Box>
 
-      {/* Resources List */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        {resourcesData.map((resource) => (
+        {resources.map((resource) => (
           <Pdf
             key={resource.id}
             title={resource.title}
             filename={resource.filename}
-            onClickMenu={handleMenuClick}
+            onClickMenu={(e) => handleMenuClick(e, resource.id)}
           />
         ))}
       </Box>
 
-      {/* ── ACTION POPOVER (Edit/Delete) ───────────────────────────────── */}
       <Popover
         id={id}
         open={open}
@@ -120,19 +164,6 @@ const Resources = () => {
         }}
       >
         <Box
-          onClick={handleMenuClose}
-          sx={{
-            padding: '12px 18px',
-            cursor: 'pointer',
-            borderBottom: '1px solid #eeeeee',
-            '&:hover': { backgroundColor: '#f5f7ff' },
-          }}
-        >
-          <Typography sx={{ fontFamily: 'Poppins', fontWeight: 400, fontSize: '14px', color: '#000' }}>
-            Edit
-          </Typography>
-        </Box>
-        <Box
           onClick={handleDeleteClick}
           sx={{
             padding: '12px 18px',
@@ -146,18 +177,17 @@ const Resources = () => {
         </Box>
       </Popover>
 
-      {/* ── DELETE CONFIRMATION POPUP ──────────────────────────────────── */}
       <AreYouSure 
         open={deleteConfirmOpen} 
         onClose={() => setDeleteConfirmOpen(false)} 
         onConfirm={handleConfirmDelete} 
       />
 
-      {/* ── ADD DOCUMENT POPUP ─────────────────────────────────────────── */}
       <AddDocument 
         open={addResourcesOpen}
         onClose={() => setAddResourcesOpen(false)}
         uploadLabel="Add Resources"
+        onSave={handleSave}
       />
 
     </Box>

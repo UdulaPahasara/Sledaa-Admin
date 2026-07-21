@@ -1,20 +1,73 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Dialog,
   Box,
   Typography,
   Button,
   IconButton,
-  InputBase
+  InputBase,
+  CircularProgress
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 
-const AddMember = ({ open, onClose }) => {
+const AddMember = ({ open, onClose, onSave }) => {
+  const [name, setName] = useState('');
+  const [position, setPosition] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (open) {
+      setName('');
+      setPosition('');
+      setImageFile(null);
+      setImagePreview(null);
+      setIsSaving(false);
+    }
+  }, [open]);
+
+  const handleImageChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleSave = async () => {
+    if (!name.trim() || !position.trim()) {
+      alert("Please enter a name and position");
+      return;
+    }
+
+    setIsSaving(true);
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("position", position);
+    if (imageFile) {
+      formData.append("image", imageFile);
+    }
+
+    try {
+      if (onSave) {
+        await onSave(formData);
+      }
+      onClose();
+    } catch (error) {
+      console.error("Save error:", error);
+      alert("Failed to save. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={isSaving ? undefined : onClose}
       maxWidth={false}
       slotProps={{
         paper: {
@@ -33,9 +86,9 @@ const AddMember = ({ open, onClose }) => {
         }
       }}
     >
-      {/* Close Button */}
       <IconButton
         onClick={onClose}
+        disabled={isSaving}
         sx={{
           position: 'absolute',
           top: '16px',
@@ -48,7 +101,6 @@ const AddMember = ({ open, onClose }) => {
         <CloseIcon />
       </IconButton>
 
-      {/* ── Name Section ── */}
       <Box sx={{ width: '100%', mb: '24px' }}>
         <Typography
           sx={{
@@ -64,6 +116,8 @@ const AddMember = ({ open, onClose }) => {
         </Typography>
         <InputBase
           placeholder="Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           sx={{
             width: '100%',
             maxWidth: '462px',
@@ -83,7 +137,6 @@ const AddMember = ({ open, onClose }) => {
         />
       </Box>
 
-      {/* ── Title Section ── */}
       <Box sx={{ width: '100%', mb: '24px' }}>
         <Typography
           sx={{
@@ -95,10 +148,12 @@ const AddMember = ({ open, onClose }) => {
             mb: '8px'
           }}
         >
-          Enter Title
+          Enter Position
         </Typography>
         <InputBase
-          placeholder="Title"
+          placeholder="Position (e.g., President)"
+          value={position}
+          onChange={(e) => setPosition(e.target.value)}
           sx={{
             width: '100%',
             maxWidth: '462px',
@@ -118,7 +173,6 @@ const AddMember = ({ open, onClose }) => {
         />
       </Box>
 
-      {/* ── Add Image Section ── */}
       <Box sx={{ width: '100%', mb: '32px' }}>
         <Typography
           sx={{
@@ -133,6 +187,7 @@ const AddMember = ({ open, onClose }) => {
           Add Image
         </Typography>
         <Box
+          onClick={() => fileInputRef.current?.click()}
           sx={{
             width: '100%',
             maxWidth: '462px',
@@ -143,48 +198,67 @@ const AddMember = ({ open, onClose }) => {
             justifyContent: 'center',
             alignItems: 'center',
             cursor: 'pointer',
+            overflow: 'hidden',
             '&:hover': {
               backgroundColor: 'rgba(235, 235, 235, 1)'
             }
           }}
         >
-          <AddIcon
-            sx={{
-              width: { xs: '60px', sm: '72px' },
-              height: { xs: '60px', sm: '72px' },
-              color: 'rgba(188, 188, 188, 1)'
-            }}
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            onChange={handleImageChange}
+            style={{ display: 'none' }}
           />
+          {imagePreview ? (
+            <img src={imagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <AddIcon
+              sx={{
+                width: { xs: '60px', sm: '72px' },
+                height: { xs: '60px', sm: '72px' },
+                color: 'rgba(188, 188, 188, 1)'
+              }}
+            />
+          )}
         </Box>
       </Box>
 
-      {/* ── Save Button ── */}
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
         <Button
           variant="contained"
+          onClick={handleSave}
+          disabled={isSaving}
           sx={{
             width: '173px',
             height: '50px',
-            backgroundColor: 'rgba(0, 28, 166, 1)', // Dark blue
+            backgroundColor: 'rgba(0, 28, 166, 1)',
             borderRadius: '10px',
             textTransform: 'none',
             boxShadow: 'none',
             '&:hover': {
               backgroundColor: 'rgba(0, 20, 120, 1)',
               boxShadow: 'none',
+            },
+            '&.Mui-disabled': {
+              backgroundColor: 'rgba(0, 28, 166, 0.5)',
+              color: '#fff'
             }
           }}
         >
-          <Typography
-            sx={{
-              fontFamily: 'Poppins, sans-serif',
-              fontWeight: 700,
-              fontSize: '16px',
-              color: 'rgba(255, 255, 255, 1)',
-            }}
-          >
-            Save
-          </Typography>
+          {isSaving ? <CircularProgress size={24} color="inherit" /> : (
+            <Typography
+              sx={{
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 700,
+                fontSize: '16px',
+                color: 'rgba(255, 255, 255, 1)',
+              }}
+            >
+              Save
+            </Typography>
+          )}
         </Button>
       </Box>
     </Dialog>

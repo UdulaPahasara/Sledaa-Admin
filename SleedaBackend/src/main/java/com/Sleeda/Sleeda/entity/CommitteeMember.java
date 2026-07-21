@@ -1,0 +1,40 @@
+package com.Sleeda.Sleeda.entity;
+
+import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "committee_members")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class CommitteeMember {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false)
+    private String position;
+
+    @Column(name = "image_url")
+    private String imageUrl;
+
+    @Column(name = "display_order")
+    private Integer displayOrder = 0; // For sorting members if needed
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
+}

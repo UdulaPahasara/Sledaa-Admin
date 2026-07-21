@@ -10,18 +10,7 @@ import AddNewAlbum from '../../components/common/Admin/AddNewAlbum';
 import leadershipImg from '../../assets/Committee/leadershipImg.webp';
 import ourTeamImg from '../../assets/Committee/ourteam.webp';
 
-// Dummy data for members based on public Committee page
-const teamMembers = [
-  { id: 1, name: "THILINA JAYAWARDANA", position: "President" },
-  { id: 2, name: "KASUN PERERA", position: "Vice President" },
-  { id: 3, name: "ANURA JAYAWARDHANA", position: "Secretary" },
-  { id: 4, name: "AMALI PERERA", position: "Assistant Secretary" },
-  { id: 5, name: "THILINA JAYAWARDANA", position: "Treasurer" },
-  { id: 6, name: "KASUN PERERA", position: "Assistant Treasurer" },
-  { id: 7, name: "ANURA JAYAWARDHANA", position: "Committee Member" },
-  { id: 8, name: "AMALI PERERA", position: "Committee Member" }
-];
-
+// Dummy data for cover images
 // Helper Component for Image Box with Action Menu
 const ActionImageBox = ({ src, sx, onClickMenu }) => (
   <Box sx={{ position: 'relative', ...sx }}>
@@ -57,14 +46,51 @@ const ActionImageBox = ({ src, sx, onClickMenu }) => (
 );
 
 const AdminCommittee = () => {
+  const [members, setMembers] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [isAddImageOpen, setIsAddImageOpen] = useState(false);
+  const [selectedMemberId, setSelectedMemberId] = useState(null);
 
-  const handleMenuClick = (e) => {
+  const fetchMembers = async () => {
+    try {
+      const response = await fetch('http://localhost:8081/api/committee');
+      if (response.ok) {
+        const data = await response.json();
+        setMembers(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch committee members", error);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchMembers();
+  }, []);
+
+  const handleSave = async (formData) => {
+    const token = localStorage.getItem('jwt_token');
+    const response = await fetch('http://localhost:8081/api/committee', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || 'Failed to save member');
+    }
+
+    fetchMembers();
+  };
+
+  const handleMenuClick = (e, id) => {
     e.stopPropagation();
     setAnchorEl(e.currentTarget);
+    setSelectedMemberId(id);
   };
 
   const handleMenuClose = () => {
@@ -76,9 +102,26 @@ const AdminCommittee = () => {
     setDeleteConfirmOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     setDeleteConfirmOpen(false);
-    // Real delete logic would go here
+    if (!selectedMemberId) return;
+
+    try {
+      const token = localStorage.getItem('jwt_token');
+      const response = await fetch(`http://localhost:8081/api/committee/${selectedMemberId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        fetchMembers();
+      } else {
+        alert("Failed to delete member");
+      }
+    } catch (error) {
+      console.error("Error deleting member", error);
+    }
   };
 
   const open = Boolean(anchorEl);
@@ -200,13 +243,13 @@ const AdminCommittee = () => {
           gap: '40px',
           justifyItems: 'center'
         }}>
-          {teamMembers.map((member) => (
+          {members.map((member) => (
             <Box key={member.id} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '195.56px' }}>
               {/* Member Image with Action Menu */}
               <ActionImageBox 
-                src={ourTeamImg} 
+                src={member.imageUrl ? `http://localhost:8081${member.imageUrl}` : ourTeamImg} 
                 sx={{ width: '195.56px', height: '178.82px', borderRadius: '6.63px', mb: '16px', backgroundColor: '#f5f5f5' }} 
-                onClickMenu={handleMenuClick} 
+                onClickMenu={(e) => handleMenuClick(e, member.id)} 
               />
               
               {/* Member Info */}
@@ -296,7 +339,8 @@ const AdminCommittee = () => {
       {/* ── ADD MEMBER POPUP ──────────────────────────────────── */}
       <AddMember 
         open={isAddMemberOpen} 
-        onClose={() => setIsAddMemberOpen(false)} 
+        onClose={() => setIsAddMemberOpen(false)}
+        onSave={handleSave}
       />
 
       {/* ── ADD IMAGE POPUP (Reusing AddNewAlbum) ─────────────── */}

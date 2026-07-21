@@ -1,19 +1,31 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Dialog,
   Box,
   Typography,
   Button,
   IconButton,
-  InputBase
+  InputBase,
+  CircularProgress
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
 import pdfIcon from '../../../assets/AnnualReport/pdf-icon-red.webp';
 
-const AddDocument = ({ open, onClose, uploadLabel = "Add Report" }) => {
+const AddDocument = ({ open, onClose, uploadLabel = "Add Report", onSave }) => {
   const [selectedFile, setSelectedFile] = useState(null);
+  const [title, setTitle] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Reset form when dialog opens
+  useEffect(() => {
+    if (open) {
+      setSelectedFile(null);
+      setTitle('');
+      setIsSaving(false);
+    }
+  }, [open]);
 
   const handleFileUpload = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -27,10 +39,38 @@ const AddDocument = ({ open, onClose, uploadLabel = "Add Report" }) => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const handleSave = async () => {
+    if (!title.trim()) {
+      alert("Please enter a title");
+      return;
+    }
+    if (!selectedFile) {
+      alert("Please select a file to upload");
+      return;
+    }
+
+    setIsSaving(true);
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("file", selectedFile);
+
+    try {
+      if (onSave) {
+        await onSave(formData);
+      }
+      onClose();
+    } catch (error) {
+      console.error("Save error:", error);
+      alert("Failed to save. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={isSaving ? undefined : onClose}
       maxWidth={false}
       slotProps={{
         paper: {
@@ -49,9 +89,9 @@ const AddDocument = ({ open, onClose, uploadLabel = "Add Report" }) => {
         }
       }}
     >
-      {/* Close Button */}
       <IconButton
         onClick={onClose}
+        disabled={isSaving}
         sx={{
           position: 'absolute',
           top: '16px',
@@ -64,7 +104,6 @@ const AddDocument = ({ open, onClose, uploadLabel = "Add Report" }) => {
         <CloseIcon />
       </IconButton>
 
-      {/* ── Title Section ── */}
       <Box sx={{ width: '100%', mb: '24px' }}>
         <Typography
           sx={{
@@ -80,6 +119,8 @@ const AddDocument = ({ open, onClose, uploadLabel = "Add Report" }) => {
         </Typography>
         <InputBase
           placeholder="Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
           sx={{
             width: '100%',
             maxWidth: '462px',
@@ -99,7 +140,6 @@ const AddDocument = ({ open, onClose, uploadLabel = "Add Report" }) => {
         />
       </Box>
 
-      {/* ── Document Upload Section ── */}
       <Box sx={{ width: '100%', mb: '32px' }}>
         <Typography
           sx={{
@@ -127,7 +167,6 @@ const AddDocument = ({ open, onClose, uploadLabel = "Add Report" }) => {
             boxSizing: 'border-box'
           }}
         >
-          {/* Dashed Inner Box */}
           <Box
             onClick={() => fileInputRef.current?.click()}
             sx={{
@@ -166,7 +205,7 @@ const AddDocument = ({ open, onClose, uploadLabel = "Add Report" }) => {
                     textAlign: 'center',
                   }}
                 >
-                  Upload Your Profile Photo From Your Device.
+                  Upload Your Document From Your Device.
                 </Typography>
                 <Button
                   component="span"
@@ -184,7 +223,7 @@ const AddDocument = ({ open, onClose, uploadLabel = "Add Report" }) => {
                   }}
                 >
                   <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: '10px', lineHeight: '10px' }}>
-                    Choose Profile
+                    Choose Document
                   </Typography>
                 </Button>
               </>
@@ -226,10 +265,11 @@ const AddDocument = ({ open, onClose, uploadLabel = "Add Report" }) => {
         </Box>
       </Box>
 
-      {/* ── Save Button ── */}
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
         <Button
           variant="contained"
+          onClick={handleSave}
+          disabled={isSaving}
           sx={{
             width: '173px',
             height: '50px',
@@ -240,19 +280,25 @@ const AddDocument = ({ open, onClose, uploadLabel = "Add Report" }) => {
             '&:hover': {
               backgroundColor: 'rgba(0, 20, 120, 1)',
               boxShadow: 'none',
+            },
+            '&.Mui-disabled': {
+              backgroundColor: 'rgba(0, 28, 166, 0.5)',
+              color: '#fff'
             }
           }}
         >
-          <Typography
-            sx={{
-              fontFamily: 'Poppins, sans-serif',
-              fontWeight: 700,
-              fontSize: '16px',
-              color: 'rgba(255, 255, 255, 1)',
-            }}
-          >
-            Save
-          </Typography>
+          {isSaving ? <CircularProgress size={24} color="inherit" /> : (
+            <Typography
+              sx={{
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 700,
+                fontSize: '16px',
+                color: 'rgba(255, 255, 255, 1)',
+              }}
+            >
+              Save
+            </Typography>
+          )}
         </Button>
       </Box>
     </Dialog>

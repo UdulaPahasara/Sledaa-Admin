@@ -1,23 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Button, Popover } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import Pdf from '../../components/common/Admin/Pdf';
 import AreYouSure from '../../components/Popup/AreYouSure';
 import AddDocument from '../../components/common/Admin/AddDocument';
 
-const reportsData = [
-  { id: 1, title: '2026 Annual Report', filename: '2026annualreport.pdf' },
-  { id: 2, title: '2025 Annual Report', filename: '2025annualreport.pdf' }
-];
-
 const Report = () => {
+  const [reports, setReports] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [addReportOpen, setAddReportOpen] = useState(false);
+  const [selectedReportId, setSelectedReportId] = useState(null);
 
-  const handleMenuClick = (e) => {
+  const fetchReports = async () => {
+    try {
+      const response = await fetch('http://localhost:8081/api/reports');
+      if (response.ok) {
+        const data = await response.json();
+        setReports(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch reports", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchReports();
+  }, []);
+
+  const handleSave = async (formData) => {
+    const token = localStorage.getItem('jwt_token');
+    const response = await fetch('http://localhost:8081/api/reports', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || 'Failed to save report');
+    }
+
+    fetchReports();
+  };
+
+  const handleMenuClick = (e, id) => {
     e.stopPropagation();
     setAnchorEl(e.currentTarget);
+    setSelectedReportId(id);
   };
 
   const handleMenuClose = () => {
@@ -29,9 +61,26 @@ const Report = () => {
     setDeleteConfirmOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     setDeleteConfirmOpen(false);
-    // Add real delete logic here
+    if (!selectedReportId) return;
+
+    try {
+      const token = localStorage.getItem('jwt_token');
+      const response = await fetch(`http://localhost:8081/api/reports/${selectedReportId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        fetchReports();
+      } else {
+        alert("Failed to delete report");
+      }
+    } catch (error) {
+      console.error("Error deleting report", error);
+    }
   };
 
   const open = Boolean(anchorEl);
@@ -47,7 +96,6 @@ const Report = () => {
         fontFamily: 'Poppins, sans-serif',
       }}
     >
-      {/* Header Section */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '40px', flexWrap: 'wrap', gap: '20px' }}>
         <Typography
           sx={{
@@ -83,19 +131,17 @@ const Report = () => {
         </Button>
       </Box>
 
-      {/* Reports List */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        {reportsData.map((report) => (
+        {reports.map((report) => (
           <Pdf
             key={report.id}
             title={report.title}
             filename={report.filename}
-            onClickMenu={handleMenuClick}
+            onClickMenu={(e) => handleMenuClick(e, report.id)}
           />
         ))}
       </Box>
 
-      {/* ── ACTION POPOVER (Edit/Delete) ───────────────────────────────── */}
       <Popover
         id={id}
         open={open}
@@ -118,19 +164,6 @@ const Report = () => {
         }}
       >
         <Box
-          onClick={handleMenuClose}
-          sx={{
-            padding: '12px 18px',
-            cursor: 'pointer',
-            borderBottom: '1px solid #eeeeee',
-            '&:hover': { backgroundColor: '#f5f7ff' },
-          }}
-        >
-          <Typography sx={{ fontFamily: 'Poppins', fontWeight: 400, fontSize: '14px', color: '#000' }}>
-            Edit
-          </Typography>
-        </Box>
-        <Box
           onClick={handleDeleteClick}
           sx={{
             padding: '12px 18px',
@@ -144,18 +177,17 @@ const Report = () => {
         </Box>
       </Popover>
 
-      {/* ── DELETE CONFIRMATION POPUP ──────────────────────────────────── */}
       <AreYouSure 
         open={deleteConfirmOpen} 
         onClose={() => setDeleteConfirmOpen(false)} 
         onConfirm={handleConfirmDelete} 
       />
 
-      {/* ── ADD DOCUMENT POPUP ─────────────────────────────────────────── */}
       <AddDocument 
         open={addReportOpen}
         onClose={() => setAddReportOpen(false)}
         uploadLabel="Add Report"
+        onSave={handleSave}
       />
 
     </Box>

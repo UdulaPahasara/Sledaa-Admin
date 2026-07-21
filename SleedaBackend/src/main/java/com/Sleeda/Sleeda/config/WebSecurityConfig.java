@@ -40,6 +40,11 @@ public class WebSecurityConfig {
                     .requestMatchers("/uploads/**").permitAll()
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/albums/**").permitAll()
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/events/**").permitAll()
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/news/**").permitAll()
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/projects/**").permitAll()
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/reports/**").permitAll()
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/resources/**").permitAll()
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/committee/**").permitAll()
                     .anyRequest().authenticated()
             );
 
