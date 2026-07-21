@@ -71,6 +71,7 @@ const AddDocument = ({ open, onClose, uploadLabel = "Add Report", onSave }) => {
     <Dialog
       open={open}
       onClose={isSaving ? undefined : onClose}
+      disableScrollLock={true}
       maxWidth={false}
       slotProps={{
         paper: {

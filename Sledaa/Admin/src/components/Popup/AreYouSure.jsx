@@ -7,6 +7,7 @@ const AreYouSure = ({ open, onClose, onConfirm }) => {
     <Dialog
       open={open}
       onClose={onClose}
+      disableScrollLock={true}
       maxWidth={false}
       disableRestoreFocus
       slotProps={{

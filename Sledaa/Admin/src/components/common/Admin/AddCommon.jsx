@@ -94,6 +94,7 @@ const AddCommon = ({ open, onClose, onSave, itemToEdit }) => {
     <Dialog
       open={open}
       onClose={onClose}
+      disableScrollLock={true}
       maxWidth={false}
       slotProps={{
         paper: {

@@ -4,7 +4,7 @@ import AddIcon from '@mui/icons-material/Add';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import AreYouSure from '../../components/Popup/AreYouSure';
 import AddMember from '../../components/common/Admin/AddMember';
-import AddNewAlbum from '../../components/common/Admin/AddNewAlbum';
+import AddCoverImage from '../../components/common/Admin/AddCoverImage';
 
 // Assets
 import leadershipImg from '../../assets/Committee/leadershipImg.webp';
@@ -48,13 +48,14 @@ const ActionImageBox = ({ src, sx, onClickMenu }) => (
 const AdminCommittee = () => {
   const [members, setMembers] = useState([]);
   const [pastMembers, setPastMembers] = useState([]);
+  const [coverImages, setCoverImages] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [isAddPastMemberOpen, setIsAddPastMemberOpen] = useState(false);
   const [isAddImageOpen, setIsAddImageOpen] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState(null);
-  const [selectedMemberType, setSelectedMemberType] = useState('committee'); // 'committee' | 'past'
+  const [selectedMemberType, setSelectedMemberType] = useState('committee'); // 'committee' | 'past' | 'cover'
 
   const fetchMembers = async () => {
     try {
@@ -80,9 +81,22 @@ const AdminCommittee = () => {
     }
   };
 
+  const fetchCoverImages = async () => {
+    try {
+      const response = await fetch('http://localhost:8081/api/committee-covers');
+      if (response.ok) {
+        const data = await response.json();
+        setCoverImages(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch committee cover images", error);
+    }
+  };
+
   React.useEffect(() => {
     fetchMembers();
     fetchPastMembers();
+    fetchCoverImages();
   }, []);
 
   const handleSave = async (formData) => {
@@ -121,6 +135,24 @@ const AdminCommittee = () => {
     fetchPastMembers();
   };
 
+  const handleSaveCoverImage = async (formData) => {
+    const token = localStorage.getItem('jwt_token');
+    const response = await fetch('http://localhost:8081/api/committee-covers', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || 'Failed to save cover image');
+    }
+
+    fetchCoverImages();
+  };
+
   const handleMenuClick = (e, id, type = 'committee') => {
     e.stopPropagation();
     setAnchorEl(e.currentTarget);
@@ -143,9 +175,13 @@ const AdminCommittee = () => {
 
     try {
       const token = localStorage.getItem('jwt_token');
-      const endpoint = selectedMemberType === 'past' 
-        ? `/api/past-committee/${selectedMemberId}` 
-        : `/api/committee/${selectedMemberId}`;
+      let endpoint = `/api/committee/${selectedMemberId}`;
+      if (selectedMemberType === 'past') {
+        endpoint = `/api/past-committee/${selectedMemberId}`;
+      } else if (selectedMemberType === 'cover') {
+        endpoint = `/api/committee-covers/${selectedMemberId}`;
+      }
+
       const response = await fetch(`http://localhost:8081${endpoint}`, {
         method: 'DELETE',
         headers: {
@@ -155,14 +191,16 @@ const AdminCommittee = () => {
       if (response.ok) {
         if (selectedMemberType === 'past') {
           fetchPastMembers();
+        } else if (selectedMemberType === 'cover') {
+          fetchCoverImages();
         } else {
           fetchMembers();
         }
       } else {
-        alert("Failed to delete member");
+        alert("Failed to delete");
       }
     } catch (error) {
-      console.error("Error deleting member", error);
+      console.error("Error deleting", error);
     }
   };
 
@@ -218,26 +256,43 @@ const AdminCommittee = () => {
 
         {/* Cover Images Layout */}
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: '30px' }}>
-          {/* Main Large Image */}
-          <ActionImageBox 
-            src={leadershipImg} 
-            sx={{ width: { xs: '100%', lg: '563px' }, height: { xs: 'auto', lg: '392px' }, borderRadius: '20px',left:{lg:'170px'} }} 
-            onClickMenu={handleMenuClick} 
-          />
-          
-          {/* Secondary Images Column */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <ActionImageBox 
-              src={leadershipImg} 
-              sx={{ width: { xs: '100%', lg: '187px' }, height: { xs: 'auto', lg: '122px' }, borderRadius: '10px',left:{lg:'180px'} }} 
-              onClickMenu={handleMenuClick} 
-            />
-            <ActionImageBox 
-              src={leadershipImg} 
-              sx={{ width: { xs: '100%', lg: '187px' }, height: { xs: 'auto', lg: '122px' }, borderRadius: '10px',left:{lg:'180px'} }} 
-              onClickMenu={handleMenuClick} 
-            />
-          </Box>
+          {coverImages.length > 0 ? (
+            <>
+              {/* Main Large Image (isMain = true) */}
+              {coverImages.find(img => img.isMain) ? (
+                <ActionImageBox 
+                  src={`http://localhost:8081${coverImages.find(img => img.isMain).imageUrl}`} 
+                  sx={{ width: { xs: '100%', lg: '563px' }, height: { xs: 'auto', lg: '392px' }, borderRadius: '20px', left: { lg: '170px' } }} 
+                  onClickMenu={(e) => handleMenuClick(e, coverImages.find(img => img.isMain).id, 'cover')} 
+                />
+              ) : (
+                /* Fallback if no main image but secondary exist */
+                <ActionImageBox 
+                  src={`http://localhost:8081${coverImages[0].imageUrl}`} 
+                  sx={{ width: { xs: '100%', lg: '563px' }, height: { xs: 'auto', lg: '392px' }, borderRadius: '20px', left: { lg: '170px' } }} 
+                  onClickMenu={(e) => handleMenuClick(e, coverImages[0].id, 'cover')} 
+                />
+              )}
+              
+              {/* Secondary Images Column */}
+              {coverImages.filter(img => !img.isMain).length > 0 && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {coverImages.filter(img => !img.isMain).map(cover => (
+                    <ActionImageBox 
+                      key={cover.id}
+                      src={`http://localhost:8081${cover.imageUrl}`} 
+                      sx={{ width: { xs: '100%', lg: '187px' }, height: { xs: 'auto', lg: '122px' }, borderRadius: '10px', left: { lg: '180px' } }} 
+                      onClickMenu={(e) => handleMenuClick(e, cover.id, 'cover')} 
+                    />
+                  ))}
+                </Box>
+              )}
+            </>
+          ) : (
+            <Typography sx={{ fontFamily: 'Poppins', color: '#666', width: '100%', textAlign: 'center', py: 5 }}>
+              No cover images found. Please add a new image.
+            </Typography>
+          )}
         </Box>
       </Box>
 
@@ -475,10 +530,11 @@ const AdminCommittee = () => {
         title="Add Past Committee Member"
       />
 
-      {/* ── ADD IMAGE POPUP (Reusing AddNewAlbum) ─────────────── */}
-      <AddNewAlbum
+      {/* ── ADD COVER IMAGE POPUP ─────────────── */}
+      <AddCoverImage
         open={isAddImageOpen}
         onClose={() => setIsAddImageOpen(false)}
+        onSave={handleSaveCoverImage}
       />
 
     </Box>

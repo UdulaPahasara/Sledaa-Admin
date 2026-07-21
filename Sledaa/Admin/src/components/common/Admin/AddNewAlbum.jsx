@@ -170,6 +170,7 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
     <Dialog
       open={open}
       onClose={onClose}
+      disableScrollLock={true}
       maxWidth={false}
       slotProps={{
         paper: {
