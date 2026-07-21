@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Dialog,
   Box,
@@ -10,12 +10,33 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 
-const AddCommon = ({ open, onClose }) => {
+const AddCommon = ({ open, onClose, onSave, itemToEdit }) => {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [coverImage, setCoverImage] = useState(null);
+  const [coverImageFile, setCoverImageFile] = useState(null);
+  const [saveError, setSaveError] = useState('');
+  const [saving, setSaving] = useState(false);
   const coverInputRef = useRef(null);
+
+  useEffect(() => {
+    if (itemToEdit) {
+      setTitle(itemToEdit.title || '');
+      setDescription(itemToEdit.description || '');
+      setCoverImage(itemToEdit.coverImageUrl ? `http://localhost:8081${itemToEdit.coverImageUrl}` : null);
+      setCoverImageFile(null);
+    } else {
+      setTitle('');
+      setDescription('');
+      setCoverImage(null);
+      setCoverImageFile(null);
+    }
+    setSaveError('');
+  }, [itemToEdit, open]);
 
   const handleCoverUpload = (e) => {
     if (e.target.files && e.target.files[0]) {
+      setCoverImageFile(e.target.files[0]);
       setCoverImage(URL.createObjectURL(e.target.files[0]));
     }
   };
@@ -23,8 +44,52 @@ const AddCommon = ({ open, onClose }) => {
   const removeCoverImage = (e) => {
     e.stopPropagation();
     setCoverImage(null);
+    setCoverImageFile(null);
     if (coverInputRef.current) coverInputRef.current.value = '';
   };
+
+  const handleSaveClick = async () => {
+    console.log('[Save] button clicked');
+    console.log('[Save] title:', title);
+    console.log('[Save] description:', description);
+    console.log('[Save] coverImageFile:', coverImageFile);
+    console.log('[Save] onSave prop:', typeof onSave);
+
+    // Frontend validation
+    if (!title.trim()) {
+      setSaveError('Please enter a title.');
+      return;
+    }
+    if (!description.trim()) {
+      setSaveError('Please enter a description.');
+      return;
+    }
+
+    setSaveError('');
+    setSaving(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('description', description);
+      if (coverImageFile) {
+        formData.append('coverImage', coverImageFile);
+      }
+      console.log('[Save] calling onSave with formData...');
+      if (onSave) {
+        await onSave(formData, itemToEdit ? itemToEdit.id : null);
+        console.log('[Save] onSave completed successfully');
+      } else {
+        console.error('[Save] ERROR: onSave prop is undefined!');
+      }
+    } catch (err) {
+      console.error('[Save] Error during save:', err);
+      setSaveError(err.message || 'Failed to save. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Dialog
       open={open}
@@ -41,13 +106,12 @@ const AddCommon = ({ open, onClose }) => {
             boxSizing: 'border-box',
             padding: { xs: '40px 16px 24px 16px', sm: '32px 40px' }, 
             margin: { xs: '24px 12px', sm: '32px auto' }, 
-            maxHeight: 'calc(100% - 64px)', // Ensure it doesn't touch top/bottom edges on any device
+            maxHeight: 'calc(100% - 64px)', 
             overflowY: 'auto'
           }
         }
       }}
     >
-      {/* Close Button */}
       <IconButton
         onClick={onClose}
         sx={{
@@ -62,7 +126,6 @@ const AddCommon = ({ open, onClose }) => {
         <CloseIcon />
       </IconButton>
 
-      {/* ── Title Section ── */}
       <Box sx={{ width: '100%', mb: '24px' }}>
         <Typography
           sx={{
@@ -78,8 +141,10 @@ const AddCommon = ({ open, onClose }) => {
         </Typography>
         <InputBase
           placeholder="Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
           sx={{
-            width: '100%', // Max width will be constrained by dialog padding
+            width: '100%',
             maxWidth: '631px',
             height: '50px',
             backgroundColor: 'rgba(243, 243, 243, 1)',
@@ -97,7 +162,6 @@ const AddCommon = ({ open, onClose }) => {
         />
       </Box>
 
-      {/* ── Description & Cover Image Row ── */}
       <Box
         sx={{
           display: 'flex',
@@ -106,7 +170,6 @@ const AddCommon = ({ open, onClose }) => {
           mb: '32px'
         }}
       >
-        {/* Description Section */}
         <Box sx={{ flex: 1, maxWidth: { sm: '379px' } }}>
           <Typography
             sx={{
@@ -124,6 +187,8 @@ const AddCommon = ({ open, onClose }) => {
             placeholder="Description"
             multiline
             rows={4}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
             sx={{
               width: '100%',
               height: { xs: '120px', sm: '140px' },
@@ -144,7 +209,6 @@ const AddCommon = ({ open, onClose }) => {
           />
         </Box>
 
-        {/* Cover Image Section */}
         <Box sx={{ flexShrink: 0, width: { xs: '100%', sm: '234px' } }}>
           <Typography
             sx={{
@@ -214,20 +278,29 @@ const AddCommon = ({ open, onClose }) => {
         </Box>
       </Box>
 
-      {/* ── Save Button ── */}
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '100%', gap: '8px' }}>
+        {saveError && (
+          <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontSize: '13px', color: '#d32f2f' }}>
+            {saveError}
+          </Typography>
+        )}
         <Button
           variant="contained"
+          onClick={handleSaveClick}
+          disabled={saving}
           sx={{
             width: '173px',
             height: '50px',
-            backgroundColor: 'rgba(0, 28, 165, 1)', // Dark blue
+            backgroundColor: 'rgba(0, 28, 165, 1)',
             borderRadius: '10px',
             textTransform: 'none',
             boxShadow: 'none',
             '&:hover': {
               backgroundColor: 'rgba(0, 20, 120, 1)',
               boxShadow: 'none',
+            },
+            '&.Mui-disabled': {
+              backgroundColor: 'rgba(0, 28, 165, 0.5)',
             }
           }}
         >
@@ -239,7 +312,7 @@ const AddCommon = ({ open, onClose }) => {
               color: 'rgba(255, 255, 255, 1)',
             }}
           >
-            Save
+            {saving ? 'Saving...' : 'Save'}
           </Typography>
         </Button>
       </Box>

@@ -9,11 +9,24 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if token exists on load
     const token = localStorage.getItem('jwt_token');
     if (token) {
-      // In a real app, verify the token. Here we just set a mock user.
-      setUser({ role: 'admin' });
+      // Decode the JWT payload and check if it's expired
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const isExpired = payload.exp * 1000 < Date.now();
+        if (isExpired) {
+          // Token expired — clear it and force re-login
+          localStorage.removeItem('jwt_token');
+          navigate('/');
+        } else {
+          setUser({ role: 'admin' });
+        }
+      } catch (e) {
+        // Malformed token — clear it
+        localStorage.removeItem('jwt_token');
+        navigate('/');
+      }
     }
   }, []);
 

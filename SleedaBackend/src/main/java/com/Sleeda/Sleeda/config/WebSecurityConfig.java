@@ -39,6 +39,7 @@ public class WebSecurityConfig {
                 auth.requestMatchers("/api/auth/**").permitAll()
                     .requestMatchers("/uploads/**").permitAll()
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/albums/**").permitAll()
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/events/**").permitAll()
                     .anyRequest().authenticated()
             );
 

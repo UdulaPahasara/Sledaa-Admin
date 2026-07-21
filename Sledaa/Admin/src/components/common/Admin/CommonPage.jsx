@@ -5,9 +5,10 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import AddCommon from './AddCommon';
 import AreYouSure from '../../Popup/AreYouSure';
 
-const EventCard = ({ event, imageSrc }) => {
+const EventCard = ({ event, index, onEdit, onDelete }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const imageLeft = index % 2 === 0;
 
   const handleMenuClick = (e) => {
     e.stopPropagation();
@@ -27,7 +28,7 @@ const EventCard = ({ event, imageSrc }) => {
 
   const handleConfirmDelete = () => {
     setDeleteConfirmOpen(false);
-    // Add real delete logic here
+    if (onDelete) onDelete(event.id);
   };
 
   const open = Boolean(anchorEl);
@@ -44,15 +45,15 @@ const EventCard = ({ event, imageSrc }) => {
         // Alternate padding so the small gap is always on the image side
         padding: {
           xs: '8.65px 9.07px 9.07px 9.07px', // mobile
-          sm: event.imageLeft 
+          sm: imageLeft 
             ? '16px 40px 16px 16px'  // tablet image left
             : '16px 16px 16px 40px', // tablet image right
-          lg: event.imageLeft 
+          lg: imageLeft 
             ? '8.65px 31.73px 9.07px 9.07px'  // desktop image left
             : '8.65px 9.07px 9.07px 31.73px'  // desktop image right
         },
         display: 'flex',
-        flexDirection: { xs: 'column', sm: event.imageLeft ? 'row' : 'row-reverse' },
+        flexDirection: { xs: 'column', sm: imageLeft ? 'row' : 'row-reverse' },
         alignItems: 'flex-start',
         gap: { xs: '16px', sm: '32px', lg: '24px' },
         position: 'relative',
@@ -62,7 +63,7 @@ const EventCard = ({ event, imageSrc }) => {
       {/* Image Box */}
       <Box
         component="img"
-        src={imageSrc}
+        src={event.coverImageUrl ? `http://localhost:8081${event.coverImageUrl}` : (event.imageSrc || '')}
         alt={event.title}
         sx={{
           width: { xs: '100%', sm: '340px', lg: '229px' },
@@ -162,7 +163,10 @@ const EventCard = ({ event, imageSrc }) => {
       >
         {/* Edit */}
         <Box
-          onClick={handleMenuClose}
+          onClick={(e) => {
+            handleMenuClose(e);
+            if (onEdit) onEdit(event);
+          }}
           sx={{
             padding: '12px 18px',
             cursor: 'pointer',
@@ -214,8 +218,19 @@ const EventCard = ({ event, imageSrc }) => {
   );
 };
 
-const CommonPage = ({ title = "PAGE", buttonText = "Add New", data = [], imageSrc }) => {
+const CommonPage = ({ title = "PAGE", buttonText = "Add New", data = [], onSave, onDelete }) => {
   const [isAddCommonOpen, setIsAddCommonOpen] = useState(false);
+  const [itemToEdit, setItemToEdit] = useState(null);
+
+  const handleEdit = (item) => {
+    setItemToEdit(item);
+    setIsAddCommonOpen(true);
+  };
+
+  const handleClose = () => {
+    setIsAddCommonOpen(false);
+    setItemToEdit(null);
+  };
 
   return (
     <Box
@@ -249,7 +264,10 @@ const CommonPage = ({ title = "PAGE", buttonText = "Add New", data = [], imageSr
         </Typography>
 
         <Button
-          onClick={() => setIsAddCommonOpen(true)}
+          onClick={() => {
+            setItemToEdit(null);
+            setIsAddCommonOpen(true);
+          }}
           sx={{
             width: '159px',
             height: '37px',
@@ -288,15 +306,28 @@ const CommonPage = ({ title = "PAGE", buttonText = "Add New", data = [], imageSr
           justifyItems: 'flex-start',
         }}
       >
-        {data.map((item) => (
-          <EventCard key={item.id} event={item} imageSrc={imageSrc} />
+        {data.map((item, index) => (
+          <EventCard 
+            key={item.id} 
+            event={item} 
+            index={index} 
+            onEdit={handleEdit} 
+            onDelete={onDelete} 
+          />
         ))}
       </Box>
 
       {/* ── Add New Event Popup ── */}
       <AddCommon 
         open={isAddCommonOpen} 
-        onClose={() => setIsAddCommonOpen(false)} 
+        onClose={handleClose} 
+        onSave={async (formData, editId) => {
+          if (onSave) {
+            await onSave(formData, editId);
+          }
+          handleClose();
+        }}
+        itemToEdit={itemToEdit}
       />
     </Box>
   );
