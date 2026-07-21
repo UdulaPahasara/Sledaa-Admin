@@ -45,6 +45,7 @@ public class WebSecurityConfig {
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/reports/**").permitAll()
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/resources/**").permitAll()
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/committee/**").permitAll()
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/past-committee/**").permitAll()
                     .anyRequest().authenticated()
             );
 

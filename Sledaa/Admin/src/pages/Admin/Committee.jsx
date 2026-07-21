@@ -47,11 +47,14 @@ const ActionImageBox = ({ src, sx, onClickMenu }) => (
 
 const AdminCommittee = () => {
   const [members, setMembers] = useState([]);
+  const [pastMembers, setPastMembers] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
+  const [isAddPastMemberOpen, setIsAddPastMemberOpen] = useState(false);
   const [isAddImageOpen, setIsAddImageOpen] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState(null);
+  const [selectedMemberType, setSelectedMemberType] = useState('committee'); // 'committee' | 'past'
 
   const fetchMembers = async () => {
     try {
@@ -65,8 +68,21 @@ const AdminCommittee = () => {
     }
   };
 
+  const fetchPastMembers = async () => {
+    try {
+      const response = await fetch('http://localhost:8081/api/past-committee');
+      if (response.ok) {
+        const data = await response.json();
+        setPastMembers(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch past committee members", error);
+    }
+  };
+
   React.useEffect(() => {
     fetchMembers();
+    fetchPastMembers();
   }, []);
 
   const handleSave = async (formData) => {
@@ -87,10 +103,29 @@ const AdminCommittee = () => {
     fetchMembers();
   };
 
-  const handleMenuClick = (e, id) => {
+  const handleSavePast = async (formData) => {
+    const token = localStorage.getItem('jwt_token');
+    const response = await fetch('http://localhost:8081/api/past-committee', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || 'Failed to save past member');
+    }
+
+    fetchPastMembers();
+  };
+
+  const handleMenuClick = (e, id, type = 'committee') => {
     e.stopPropagation();
     setAnchorEl(e.currentTarget);
     setSelectedMemberId(id);
+    setSelectedMemberType(type);
   };
 
   const handleMenuClose = () => {
@@ -108,14 +143,21 @@ const AdminCommittee = () => {
 
     try {
       const token = localStorage.getItem('jwt_token');
-      const response = await fetch(`http://localhost:8081/api/committee/${selectedMemberId}`, {
+      const endpoint = selectedMemberType === 'past' 
+        ? `/api/past-committee/${selectedMemberId}` 
+        : `/api/committee/${selectedMemberId}`;
+      const response = await fetch(`http://localhost:8081${endpoint}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
       if (response.ok) {
-        fetchMembers();
+        if (selectedMemberType === 'past') {
+          fetchPastMembers();
+        } else {
+          fetchMembers();
+        }
       } else {
         alert("Failed to delete member");
       }
@@ -280,6 +322,88 @@ const AdminCommittee = () => {
         </Box>
       </Box>
 
+      {/* ── PAST COMMITTEE MEMBERS SECTION ───────────────────────────────────── */}
+      <Box sx={{ mt: '80px' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '40px', flexWrap: 'wrap', gap: '20px' }}>
+          <Typography
+            sx={{
+              fontFamily: 'Poppins',
+              fontWeight: 600,
+              fontSize: { xs: '20px', md: '25px' },
+              lineHeight: '30px',
+              color: '#000',
+              textTransform: 'uppercase'
+            }}
+          >
+            PAST COMMITTEE MEMBERS
+          </Typography>
+          
+          <Button
+            onClick={() => setIsAddPastMemberOpen(true)}
+            sx={{
+              width: 'auto', // Auto width to fit content
+              height: '37px',
+              backgroundColor: 'rgba(0, 28, 166, 1)',
+              borderRadius: '9.98px',
+              textTransform: 'none',
+              padding: '7.98px 16px 7.98px 12px',
+              display: 'flex',
+              gap: '4.99px',
+              whiteSpace: 'nowrap',
+              '&:hover': { backgroundColor: 'rgba(0, 20, 120, 1)' }
+            }}
+          >
+            <AddIcon sx={{ width: '16px', height: '16px', color: '#fff' }} />
+            <Typography sx={{ fontFamily: 'Poppins', fontWeight: 500, fontSize: '13px', color: '#fff', whiteSpace: 'nowrap' }}>
+              Add Past Committee Member
+            </Typography>
+          </Button>
+        </Box>
+
+        {/* Past Members Grid */}
+        <Box sx={{ 
+          display: 'grid', 
+          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, 
+          gap: '40px',
+          justifyItems: 'center'
+        }}>
+          {pastMembers.map((member) => (
+            <Box key={member.id} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '195.56px' }}>
+              {/* Member Image with Action Menu */}
+              <ActionImageBox 
+                src={member.imageUrl ? `http://localhost:8081${member.imageUrl}` : ourTeamImg} 
+                sx={{ width: '195.56px', height: '178.82px', borderRadius: '6.63px', mb: '16px', backgroundColor: '#f5f5f5' }} 
+                onClickMenu={(e) => handleMenuClick(e, member.id, 'past')} 
+              />
+              
+              {/* Member Info */}
+              <Typography sx={{
+                fontFamily: 'Poppins',
+                fontWeight: 600,
+                fontSize: '12px',
+                lineHeight: '16px',
+                color: '#000',
+                textAlign: 'center',
+                textTransform: 'uppercase',
+                mb: '2px'
+              }}>
+                {member.name}
+              </Typography>
+              <Typography sx={{
+                fontFamily: 'Poppins',
+                fontWeight: 400,
+                fontSize: '10px',
+                lineHeight: '14px',
+                color: '#666',
+                textAlign: 'center'
+              }}>
+                {member.position}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+      </Box>
+
       {/* ── ACTION POPOVER (Edit/Delete) ───────────────────────────────── */}
       <Popover
         id={id}
@@ -341,6 +465,14 @@ const AdminCommittee = () => {
         open={isAddMemberOpen} 
         onClose={() => setIsAddMemberOpen(false)}
         onSave={handleSave}
+      />
+
+      {/* ── ADD PAST MEMBER POPUP ─────────────────────────────── */}
+      <AddMember 
+        open={isAddPastMemberOpen} 
+        onClose={() => setIsAddPastMemberOpen(false)}
+        onSave={handleSavePast}
+        title="Add Past Committee Member"
       />
 
       {/* ── ADD IMAGE POPUP (Reusing AddNewAlbum) ─────────────── */}
