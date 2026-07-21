@@ -11,6 +11,10 @@ const Report = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [addReportOpen, setAddReportOpen] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState(null);
+  
+  // Edit states
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editData, setEditData] = useState(null);
 
   const fetchReports = async () => {
     try {
@@ -30,8 +34,15 @@ const Report = () => {
 
   const handleSave = async (formData) => {
     const token = localStorage.getItem('jwt_token');
-    const response = await fetch('http://localhost:8081/api/reports', {
-      method: 'POST',
+    let url = 'http://localhost:8081/api/reports';
+    let method = 'POST';
+    if (isEditMode && editData) {
+      url = `http://localhost:8081/api/reports/${editData.id}`;
+      method = 'PUT';
+    }
+
+    const response = await fetch(url, {
+      method: method,
       headers: {
         'Authorization': `Bearer ${token}`
       },
@@ -44,6 +55,8 @@ const Report = () => {
     }
 
     fetchReports();
+    setIsEditMode(false);
+    setEditData(null);
   };
 
   const handleMenuClick = (e, id) => {
@@ -56,9 +69,23 @@ const Report = () => {
     setAnchorEl(null);
   };
 
+  const handleEditClick = () => {
+    setAnchorEl(null);
+    setIsEditMode(true);
+    const data = reports.find(r => r.id === selectedReportId);
+    setEditData(data);
+    setAddReportOpen(true);
+  };
+
   const handleDeleteClick = () => {
     setAnchorEl(null);
     setDeleteConfirmOpen(true);
+  };
+
+  const handleAddClose = () => {
+    setAddReportOpen(false);
+    setIsEditMode(false);
+    setEditData(null);
   };
 
   const handleConfirmDelete = async () => {
@@ -147,6 +174,7 @@ const Report = () => {
         open={open}
         anchorEl={anchorEl}
         onClose={handleMenuClose}
+        disableScrollLock={true}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         slotProps={{
@@ -155,7 +183,7 @@ const Report = () => {
             sx: {
               minWidth: '110px',
               borderRadius: '10px',
-              overflow: 'visible',
+              overflow: 'hidden',
               border: '1px solid rgba(0,0,0,0.08)',
               boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.12)',
               backgroundColor: '#fff',
@@ -164,10 +192,27 @@ const Report = () => {
         }}
       >
         <Box
+          onClick={handleEditClick}
+          sx={{
+            padding: '12px 18px',
+            cursor: 'pointer',
+            borderBottom: '1px solid #eeeeee',
+            borderTopLeftRadius: '10px',
+            borderTopRightRadius: '10px',
+            '&:hover': { backgroundColor: '#f5f7ff' },
+          }}
+        >
+          <Typography sx={{ fontFamily: 'Poppins', fontWeight: 400, fontSize: '14px', color: '#000' }}>
+            Edit
+          </Typography>
+        </Box>
+        <Box
           onClick={handleDeleteClick}
           sx={{
             padding: '12px 18px',
             cursor: 'pointer',
+            borderBottomLeftRadius: '10px',
+            borderBottomRightRadius: '10px',
             '&:hover': { backgroundColor: '#fff5f5' },
           }}
         >
@@ -185,9 +230,10 @@ const Report = () => {
 
       <AddDocument 
         open={addReportOpen}
-        onClose={() => setAddReportOpen(false)}
+        onClose={handleAddClose}
         uploadLabel="Add Report"
         onSave={handleSave}
+        document={editData}
       />
 
     </Box>

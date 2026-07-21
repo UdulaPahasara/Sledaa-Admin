@@ -5,18 +5,23 @@ import {
   Typography,
   Button,
   IconButton,
-  CircularProgress
+  CircularProgress,
+  FormControlLabel,
+  Checkbox
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
 
-const AddCoverImage = ({ open, onClose, onSave }) => {
+const AddCoverImage = ({ open, onClose, onSave, cover }) => {
   const [mainImage, setMainImage] = useState(null);
   const [mainImageFile, setMainImageFile] = useState(null);
   
   const [secondaryImages, setSecondaryImages] = useState([]);
   const [secondaryImageFiles, setSecondaryImageFiles] = useState([]);
+  
+  // Single edit mode state
+  const [isMainCheckbox, setIsMainCheckbox] = useState(false);
   
   const [loading, setLoading] = useState(false);
   
@@ -44,11 +49,24 @@ const AddCoverImage = ({ open, onClose, onSave }) => {
   };
 
   React.useEffect(() => {
-    setMainImage(null);
-    setMainImageFile(null);
-    setSecondaryImages([]);
-    setSecondaryImageFiles([]);
-  }, [open]);
+    if (open) {
+      if (cover) {
+        // Edit mode
+        setMainImage(cover.imageUrl ? `http://localhost:8081${cover.imageUrl}` : null);
+        setMainImageFile(null);
+        setIsMainCheckbox(cover.isMain || false);
+        setSecondaryImages([]);
+        setSecondaryImageFiles([]);
+      } else {
+        // Create mode
+        setMainImage(null);
+        setMainImageFile(null);
+        setIsMainCheckbox(false);
+        setSecondaryImages([]);
+        setSecondaryImageFiles([]);
+      }
+    }
+  }, [open, cover]);
 
   const removeMainImage = (e) => {
     e.stopPropagation();
@@ -63,6 +81,28 @@ const AddCoverImage = ({ open, onClose, onSave }) => {
   };
 
   const handleSave = async () => {
+    if (cover) {
+      // Edit mode save
+      setLoading(true);
+      try {
+        const formData = new FormData();
+        if (mainImageFile) {
+          formData.append('image', mainImageFile);
+        }
+        formData.append('isMain', isMainCheckbox);
+        
+        await onSave(formData, cover.id);
+        onClose();
+      } catch (error) {
+        console.error("Error editing cover image:", error);
+        alert("An error occurred while saving.");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Create mode save
     if (!mainImageFile && secondaryImageFiles.length === 0) {
       alert("Please provide at least a main cover image or secondary images.");
       return;
@@ -81,10 +121,6 @@ const AddCoverImage = ({ open, onClose, onSave }) => {
       await onSave(formData);
       
       onClose();
-      setMainImage(null);
-      setMainImageFile(null);
-      setSecondaryImages([]);
-      setSecondaryImageFiles([]);
     } catch (error) {
       console.error("Error saving cover images:", error);
       alert("An error occurred while saving.");
@@ -131,13 +167,13 @@ const AddCoverImage = ({ open, onClose, onSave }) => {
       </IconButton>
 
       <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: '18px', mb: 3 }}>
-        Add Committee Cover Images
+        {cover ? "Edit Committee Cover Image" : "Add Committee Cover Images"}
       </Typography>
 
       {/* ── Main Cover Image Section ── */}
       <Box sx={{ width: '100%', mb: '24px' }}>
         <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontWeight: 500, fontSize: '14px', color: 'rgba(117, 117, 117, 1)', mb: '8px' }}>
-          Select Main Cover Image
+          {cover ? "Cover Image" : "Select Main Cover Image"}
         </Typography>
         <Box
           onClick={() => mainInputRef.current?.click()}
@@ -185,81 +221,108 @@ const AddCoverImage = ({ open, onClose, onSave }) => {
         </Box>
       </Box>
 
-      {/* ── Secondary Images Section ── */}
-      <Box sx={{ width: '100%', mb: '40px' }}>
-        <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontWeight: 500, fontSize: '14px', color: 'rgba(117, 117, 117, 1)', mb: '8px' }}>
-          Select Secondary Multiple Images
-        </Typography>
-        <Box
-          sx={{
-            width: '100%',
-            height: '182px',
-            backgroundColor: 'rgba(243, 243, 243, 1)',
-            borderRadius: '10px',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: '24px',
-            boxSizing: 'border-box'
-          }}
-        >
+      {/* Edit Mode specific controls: checkbox for isMain */}
+      {cover && (
+        <Box sx={{ width: '100%', mb: '40px' }}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={isMainCheckbox}
+                onChange={(e) => setIsMainCheckbox(e.target.checked)}
+                sx={{
+                  color: 'rgba(0, 28, 165, 1)',
+                  '&.Mui-checked': {
+                    color: 'rgba(0, 28, 165, 1)',
+                  },
+                }}
+              />
+            }
+            label={
+              <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontWeight: 500, fontSize: '14px', color: '#000' }}>
+                Set as Main Cover Image
+              </Typography>
+            }
+          />
+        </Box>
+      )}
+
+      {/* ── Secondary Images Section (Only in Create Mode) ── */}
+      {!cover && (
+        <Box sx={{ width: '100%', mb: '40px' }}>
+          <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontWeight: 500, fontSize: '14px', color: 'rgba(117, 117, 117, 1)', mb: '8px' }}>
+            Select Secondary Multiple Images
+          </Typography>
           <Box
-            onClick={() => secondaryInputRef.current?.click()}
             sx={{
               width: '100%',
-              height: '100%',
-              borderRadius: '5.81px',
-              border: '0.73px dashed rgba(0, 0, 0, 1)',
+              height: '182px',
+              backgroundColor: 'rgba(243, 243, 243, 1)',
+              borderRadius: '10px',
               display: 'flex',
-              flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
-              gap: '12px',
-              cursor: 'pointer',
-              '&:hover': { backgroundColor: 'rgba(0,0,0,0.02)' }
+              padding: '24px',
+              boxSizing: 'border-box'
             }}
           >
-            <input 
-              type="file" 
-              accept="image/*" 
-              multiple
-              style={{ display: 'none' }} 
-              ref={secondaryInputRef}
-              onChange={handleSecondaryUpload}
-            />
-            {secondaryImages.length === 0 ? (
-              <>
-                <FileUploadOutlinedIcon sx={{ width: '20px', height: '21px', color: '#000' }} />
-                <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: '10.17px', color: '#000' }}>
-                  Upload Multiple Photos From Your Device.
-                </Typography>
-                <Button component="span" sx={{ width: '116px', height: '27px', backgroundColor: 'rgba(196, 196, 196, 1)', borderRadius: '5px', textTransform: 'none', color: '#000', '&:hover': { backgroundColor: '#b0b0b0' } }}>
-                  <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: '10px' }}>
-                    Choose Photos
+            <Box
+              onClick={() => secondaryInputRef.current?.click()}
+              sx={{
+                width: '100%',
+                height: '100%',
+                borderRadius: '5.81px',
+                border: '0.73px dashed rgba(0, 0, 0, 1)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                gap: '12px',
+                cursor: 'pointer',
+                '&:hover': { backgroundColor: 'rgba(0,0,0,0.02)' }
+              }}
+            >
+              <input 
+                type="file" 
+                accept="image/*" 
+                multiple
+                style={{ display: 'none' }} 
+                ref={secondaryInputRef}
+                onChange={handleSecondaryUpload}
+              />
+              {secondaryImages.length === 0 ? (
+                <>
+                  <FileUploadOutlinedIcon sx={{ width: '20px', height: '21px', color: '#000' }} />
+                  <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: '10.17px', color: '#000' }}>
+                    Upload Multiple Photos From Your Device.
                   </Typography>
-                </Button>
-              </>
-            ) : (
-              <Box sx={{ width: '100%', height: '100%', display: 'flex', flexWrap: 'wrap', gap: '16px', p: 2, overflowY: 'auto' }}>
-                {secondaryImages.map((src, idx) => (
-                  <Box key={idx} sx={{ position: 'relative', width: '80px', height: '80px' }}>
-                    <Box component="img" src={src} sx={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }} />
-                    <IconButton
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeSecondaryImage(idx);
-                      }}
-                      sx={{ position: 'absolute', top: '-6px', right: '-6px', width: '20px', height: '20px', backgroundColor: '#fff', boxShadow: '0 2px 4px rgba(0,0,0,0.2)', '&:hover': { backgroundColor: '#ffebeb' } }}
-                    >
-                      <CloseIcon sx={{ fontSize: '12px', color: '#d32f2f' }} />
-                    </IconButton>
-                  </Box>
-                ))}
-              </Box>
-            )}
+                  <Button component="span" sx={{ width: '116px', height: '27px', backgroundColor: 'rgba(196, 196, 196, 1)', borderRadius: '5px', textTransform: 'none', color: '#000', '&:hover': { backgroundColor: '#b0b0b0' } }}>
+                    <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: '10px' }}>
+                      Choose Photos
+                    </Typography>
+                  </Button>
+                </>
+              ) : (
+                <Box sx={{ width: '100%', height: '100%', display: 'flex', flexWrap: 'wrap', gap: '16px', p: 2, overflowY: 'auto' }}>
+                  {secondaryImages.map((src, idx) => (
+                    <Box key={idx} sx={{ position: 'relative', width: '80px', height: '80px' }}>
+                      <Box component="img" src={src} sx={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }} />
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeSecondaryImage(idx);
+                        }}
+                        sx={{ position: 'absolute', top: '-6px', right: '-6px', width: '20px', height: '20px', backgroundColor: '#fff', boxShadow: '0 2px 4px rgba(0,0,0,0.2)', '&:hover': { backgroundColor: '#ffebeb' } }}
+                      >
+                        <CloseIcon sx={{ fontSize: '12px', color: '#d32f2f' }} />
+                      </IconButton>
+                    </Box>
+                  ))}
+                </Box>
+              )}
+            </Box>
           </Box>
         </Box>
-      </Box>
+      )}
 
       {/* ── Save Button ── */}
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>

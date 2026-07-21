@@ -32,6 +32,17 @@ public class PastCommitteeMemberController {
         return new ResponseEntity<>(createdMember, HttpStatus.CREATED);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<PastCommitteeMember> updateMember(
+            @PathVariable Long id,
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "position", required = false) String position,
+            @RequestParam(value = "image", required = false) MultipartFile imageFile) {
+        
+        PastCommitteeMember updatedMember = memberService.updateMember(id, name, position, imageFile);
+        return ResponseEntity.ok(updatedMember);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteMember(@PathVariable Long id) {
         memberService.deleteMember(id);

@@ -56,6 +56,10 @@ const AdminCommittee = () => {
   const [isAddImageOpen, setIsAddImageOpen] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState(null);
   const [selectedMemberType, setSelectedMemberType] = useState('committee'); // 'committee' | 'past' | 'cover'
+  
+  // Edit mode states
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editMemberData, setEditMemberData] = useState(null);
 
   const fetchMembers = async () => {
     try {
@@ -101,8 +105,15 @@ const AdminCommittee = () => {
 
   const handleSave = async (formData) => {
     const token = localStorage.getItem('jwt_token');
-    const response = await fetch('http://localhost:8081/api/committee', {
-      method: 'POST',
+    let url = 'http://localhost:8081/api/committee';
+    let method = 'POST';
+    if (isEditMode && editMemberData) {
+      url = `http://localhost:8081/api/committee/${editMemberData.id}`;
+      method = 'PUT';
+    }
+
+    const response = await fetch(url, {
+      method: method,
       headers: {
         'Authorization': `Bearer ${token}`
       },
@@ -115,12 +126,21 @@ const AdminCommittee = () => {
     }
 
     fetchMembers();
+    setIsEditMode(false);
+    setEditMemberData(null);
   };
 
   const handleSavePast = async (formData) => {
     const token = localStorage.getItem('jwt_token');
-    const response = await fetch('http://localhost:8081/api/past-committee', {
-      method: 'POST',
+    let url = 'http://localhost:8081/api/past-committee';
+    let method = 'POST';
+    if (isEditMode && editMemberData) {
+      url = `http://localhost:8081/api/past-committee/${editMemberData.id}`;
+      method = 'PUT';
+    }
+
+    const response = await fetch(url, {
+      method: method,
       headers: {
         'Authorization': `Bearer ${token}`
       },
@@ -133,12 +153,21 @@ const AdminCommittee = () => {
     }
 
     fetchPastMembers();
+    setIsEditMode(false);
+    setEditMemberData(null);
   };
 
-  const handleSaveCoverImage = async (formData) => {
+  const handleSaveCoverImage = async (formData, id) => {
     const token = localStorage.getItem('jwt_token');
-    const response = await fetch('http://localhost:8081/api/committee-covers', {
-      method: 'POST',
+    let url = 'http://localhost:8081/api/committee-covers';
+    let method = 'POST';
+    if (id) {
+      url = `http://localhost:8081/api/committee-covers/${id}`;
+      method = 'PUT';
+    }
+
+    const response = await fetch(url, {
+      method: method,
       headers: {
         'Authorization': `Bearer ${token}`
       },
@@ -151,6 +180,8 @@ const AdminCommittee = () => {
     }
 
     fetchCoverImages();
+    setIsEditMode(false);
+    setEditMemberData(null);
   };
 
   const handleMenuClick = (e, id, type = 'committee') => {
@@ -164,9 +195,46 @@ const AdminCommittee = () => {
     setAnchorEl(null);
   };
 
+  const handleEditClick = () => {
+    setAnchorEl(null);
+    setIsEditMode(true);
+    let data = null;
+    if (selectedMemberType === 'past') {
+      data = pastMembers.find(m => m.id === selectedMemberId);
+      setEditMemberData(data);
+      setIsAddPastMemberOpen(true);
+    } else if (selectedMemberType === 'cover') {
+      data = coverImages.find(img => img.id === selectedMemberId);
+      setEditMemberData(data);
+      setIsAddImageOpen(true);
+    } else {
+      data = members.find(m => m.id === selectedMemberId);
+      setEditMemberData(data);
+      setIsAddMemberOpen(true);
+    }
+  };
+
   const handleDeleteClick = () => {
     setAnchorEl(null);
     setDeleteConfirmOpen(true);
+  };
+
+  const handleAddMemberClose = () => {
+    setIsAddMemberOpen(false);
+    setIsEditMode(false);
+    setEditMemberData(null);
+  };
+
+  const handleAddPastMemberClose = () => {
+    setIsAddPastMemberOpen(false);
+    setIsEditMode(false);
+    setEditMemberData(null);
+  };
+
+  const handleAddCoverClose = () => {
+    setIsAddImageOpen(false);
+    setIsEditMode(false);
+    setEditMemberData(null);
   };
 
   const handleConfirmDelete = async () => {
@@ -465,6 +533,7 @@ const AdminCommittee = () => {
         open={open}
         anchorEl={anchorEl}
         onClose={handleMenuClose}
+        disableScrollLock={true}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         slotProps={{
@@ -473,7 +542,7 @@ const AdminCommittee = () => {
             sx: {
               minWidth: '110px',
               borderRadius: '10px',
-              overflow: 'visible',
+              overflow: 'hidden', // Set to hidden to clip hover background correctly
               border: '1px solid rgba(0,0,0,0.08)',
               boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.12)',
               backgroundColor: '#fff',
@@ -482,11 +551,13 @@ const AdminCommittee = () => {
         }}
       >
         <Box
-          onClick={handleMenuClose}
+          onClick={handleEditClick}
           sx={{
             padding: '12px 18px',
             cursor: 'pointer',
             borderBottom: '1px solid #eeeeee',
+            borderTopLeftRadius: '10px',
+            borderTopRightRadius: '10px',
             '&:hover': { backgroundColor: '#f5f7ff' },
           }}
         >
@@ -499,6 +570,8 @@ const AdminCommittee = () => {
           sx={{
             padding: '12px 18px',
             cursor: 'pointer',
+            borderBottomLeftRadius: '10px',
+            borderBottomRightRadius: '10px',
             '&:hover': { backgroundColor: '#fff5f5' },
           }}
         >
@@ -518,23 +591,26 @@ const AdminCommittee = () => {
       {/* ── ADD MEMBER POPUP ──────────────────────────────────── */}
       <AddMember 
         open={isAddMemberOpen} 
-        onClose={() => setIsAddMemberOpen(false)}
+        onClose={handleAddMemberClose}
         onSave={handleSave}
+        member={selectedMemberType === 'committee' ? editMemberData : null}
       />
-
+ 
       {/* ── ADD PAST MEMBER POPUP ─────────────────────────────── */}
       <AddMember 
         open={isAddPastMemberOpen} 
-        onClose={() => setIsAddPastMemberOpen(false)}
+        onClose={handleAddPastMemberClose}
         onSave={handleSavePast}
         title="Add Past Committee Member"
+        member={selectedMemberType === 'past' ? editMemberData : null}
       />
-
+ 
       {/* ── ADD COVER IMAGE POPUP ─────────────── */}
       <AddCoverImage
         open={isAddImageOpen}
-        onClose={() => setIsAddImageOpen(false)}
+        onClose={handleAddCoverClose}
         onSave={handleSaveCoverImage}
+        cover={selectedMemberType === 'cover' ? editMemberData : null}
       />
 
     </Box>

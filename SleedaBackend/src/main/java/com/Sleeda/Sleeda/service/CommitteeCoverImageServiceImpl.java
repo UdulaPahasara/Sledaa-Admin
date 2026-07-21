@@ -61,6 +61,27 @@ public class CommitteeCoverImageServiceImpl implements CommitteeCoverImageServic
     }
 
     @Override
+    public CommitteeCoverImage updateCoverImage(Long id, MultipartFile imageFile, Boolean isMain) {
+        CommitteeCoverImage coverImage = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Cover image not found with id: " + id));
+        
+        if (isMain != null) {
+            coverImage.setIsMain(isMain);
+        }
+
+        if (imageFile != null && !imageFile.isEmpty()) {
+            try {
+                String imageUrl = fileStorageService.storeFile(imageFile, "committee_covers");
+                coverImage.setImageUrl(imageUrl);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to store cover image file", e);
+            }
+        }
+
+        return repository.save(coverImage);
+    }
+
+    @Override
     public void deleteCoverImage(Long id) {
         repository.findById(id).ifPresent(coverImage -> {
             repository.delete(coverImage);

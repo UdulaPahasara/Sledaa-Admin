@@ -11,7 +11,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 
-const AddMember = ({ open, onClose, onSave }) => {
+const AddMember = ({ open, onClose, onSave, member }) => {
   const [name, setName] = useState('');
   const [position, setPosition] = useState('');
   const [imageFile, setImageFile] = useState(null);
@@ -21,13 +21,13 @@ const AddMember = ({ open, onClose, onSave }) => {
 
   useEffect(() => {
     if (open) {
-      setName('');
-      setPosition('');
+      setName(member?.name || '');
+      setPosition(member?.position || '');
       setImageFile(null);
-      setImagePreview(null);
+      setImagePreview(member?.imageUrl ? `http://localhost:8081${member.imageUrl}` : null);
       setIsSaving(false);
     }
-  }, [open]);
+  }, [open, member]);
 
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {

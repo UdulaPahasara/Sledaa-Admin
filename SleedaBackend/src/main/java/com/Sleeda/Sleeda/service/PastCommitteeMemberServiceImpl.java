@@ -47,6 +47,26 @@ public class PastCommitteeMemberServiceImpl implements PastCommitteeMemberServic
     }
 
     @Override
+    public PastCommitteeMember updateMember(Long id, String name, String position, MultipartFile imageFile) {
+        PastCommitteeMember member = memberRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Past committee member not found with id: " + id));
+
+        if (name != null) member.setName(name);
+        if (position != null) member.setPosition(position);
+
+        if (imageFile != null && !imageFile.isEmpty()) {
+            try {
+                String imageUrl = fileStorageService.storeFile(imageFile, "past_committee");
+                member.setImageUrl(imageUrl);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to store image file", e);
+            }
+        }
+
+        return memberRepository.save(member);
+    }
+
+    @Override
     public void deleteMember(Long id) {
         memberRepository.findById(id).ifPresent(member -> {
             memberRepository.delete(member);

@@ -12,7 +12,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
 import pdfIcon from '../../../assets/AnnualReport/pdf-icon-red.webp';
 
-const AddDocument = ({ open, onClose, uploadLabel = "Add Report", onSave }) => {
+const AddDocument = ({ open, onClose, uploadLabel = "Add Report", onSave, document }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [title, setTitle] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -21,11 +21,11 @@ const AddDocument = ({ open, onClose, uploadLabel = "Add Report", onSave }) => {
   // Reset form when dialog opens
   useEffect(() => {
     if (open) {
-      setSelectedFile(null);
-      setTitle('');
+      setTitle(document?.title || '');
+      setSelectedFile(document?.filename ? { name: document.filename } : null);
       setIsSaving(false);
     }
-  }, [open]);
+  }, [open, document]);
 
   const handleFileUpload = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -44,7 +44,7 @@ const AddDocument = ({ open, onClose, uploadLabel = "Add Report", onSave }) => {
       alert("Please enter a title");
       return;
     }
-    if (!selectedFile) {
+    if (!document && !selectedFile) {
       alert("Please select a file to upload");
       return;
     }
@@ -52,7 +52,9 @@ const AddDocument = ({ open, onClose, uploadLabel = "Add Report", onSave }) => {
     setIsSaving(true);
     const formData = new FormData();
     formData.append("title", title);
-    formData.append("file", selectedFile);
+    if (selectedFile && selectedFile instanceof File) {
+      formData.append("file", selectedFile);
+    }
 
     try {
       if (onSave) {

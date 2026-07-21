@@ -31,6 +31,16 @@ public class CommitteeCoverImageController {
         return new ResponseEntity<>(createdCovers, HttpStatus.CREATED);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<CommitteeCoverImage> updateCoverImage(
+            @PathVariable Long id,
+            @RequestParam(value = "image", required = false) MultipartFile imageFile,
+            @RequestParam(value = "isMain", required = false) Boolean isMain) {
+        
+        CommitteeCoverImage updatedCover = coverImageService.updateCoverImage(id, imageFile, isMain);
+        return ResponseEntity.ok(updatedCover);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCoverImage(@PathVariable Long id) {
         coverImageService.deleteCoverImage(id);

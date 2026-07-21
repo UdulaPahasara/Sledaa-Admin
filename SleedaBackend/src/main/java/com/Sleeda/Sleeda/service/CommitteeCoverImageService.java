@@ -9,5 +9,6 @@ public interface CommitteeCoverImageService {
     List<CommitteeCoverImage> getAllCoverImages();
     CommitteeCoverImage saveCoverImage(MultipartFile imageFile, Boolean isMain);
     List<CommitteeCoverImage> saveCoverImages(MultipartFile mainImage, MultipartFile[] secondaryImages);
+    CommitteeCoverImage updateCoverImage(Long id, MultipartFile imageFile, Boolean isMain);
     void deleteCoverImage(Long id);
 }
