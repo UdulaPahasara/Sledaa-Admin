@@ -16,8 +16,7 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
   const [title, setTitle] = useState('');
   const [coverImage, setCoverImage] = useState(null);
   const [coverImageFile, setCoverImageFile] = useState(null);
-  const [albumImages, setAlbumImages] = useState([]);
-  const [albumImageFiles, setAlbumImageFiles] = useState([]);
+  const [albumImages, setAlbumImages] = useState([]); // Holds array of { id, src, file }
   const [loading, setLoading] = useState(false);
   
   const coverInputRef = useRef(null);
@@ -34,21 +33,30 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
     if (albumToEdit) {
       setTitle(albumToEdit.title || '');
       setCoverImage(albumToEdit.coverImageUrl ? `http://localhost:8081${albumToEdit.coverImageUrl}` : null);
+      if (albumToEdit.images) {
+        setAlbumImages(albumToEdit.images.map(img => ({
+          id: img.id,
+          src: `http://localhost:8081${img.imageUrl}`
+        })));
+      } else {
+        setAlbumImages([]);
+      }
     } else {
       setTitle('');
       setCoverImage(null);
+      setAlbumImages([]);
     }
     setCoverImageFile(null);
-    setAlbumImages([]);
-    setAlbumImageFiles([]);
   }, [albumToEdit, open]);
 
   const handleAlbumUpload = (e) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
-      const newImages = files.map(file => URL.createObjectURL(file));
-      setAlbumImages(prev => [...prev, ...newImages]);
-      setAlbumImageFiles(prev => [...prev, ...files]);
+      const newItems = files.map(file => ({
+        src: URL.createObjectURL(file),
+        file: file
+      }));
+      setAlbumImages(prev => [...prev, ...newItems]);
     }
   };
 
@@ -59,9 +67,29 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
     if (coverInputRef.current) coverInputRef.current.value = '';
   };
 
-  const removeAlbumImage = (indexToRemove) => {
+  const removeAlbumImage = async (indexToRemove) => {
+    const item = albumImages[indexToRemove];
+    if (item.id) {
+      // Existing image on the backend — delete it first
+      const token = localStorage.getItem('jwt_token');
+      try {
+        const response = await fetch(`http://localhost:8081/api/albums/images/${item.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!response.ok) {
+          alert("Failed to delete image from album on server");
+          return;
+        }
+      } catch (error) {
+        console.error("Error deleting image", error);
+        alert("Error connection to delete image");
+        return;
+      }
+    }
     setAlbumImages(prev => prev.filter((_, index) => index !== indexToRemove));
-    setAlbumImageFiles(prev => prev.filter((_, index) => index !== indexToRemove));
   };
 
   const handleSave = async () => {
@@ -73,7 +101,8 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
       }
     } else if (isAddImageOnly) {
       // Add images to existing album
-      if (albumImageFiles.length === 0) {
+      const newFiles = albumImages.filter(item => !item.id && item.file);
+      if (newFiles.length === 0) {
         alert("Please add at least one image.");
         return;
       }
@@ -91,8 +120,9 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
 
       if (isAddImageOnly) {
         const formData = new FormData();
-        albumImageFiles.forEach((file) => {
-           formData.append('images', file);
+        const newFiles = albumImages.filter(item => !item.id && item.file);
+        newFiles.forEach((item) => {
+           formData.append('images', item.file);
         });
         const response = await fetch(`http://localhost:8081/api/albums/${albumId}/images`, {
           method: 'POST',
@@ -106,16 +136,17 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
           alert("Images added successfully!");
           onClose();
           setAlbumImages([]);
-          setAlbumImageFiles([]);
         } else {
           alert("Failed to add images");
         }
       } else if (albumToEdit) {
+        // Edit Album details (title, cover)
         const formData = new FormData();
         formData.append('title', title);
         if (coverImageFile) {
           formData.append('coverImage', coverImageFile);
         }
+        
         const response = await fetch(`http://localhost:8081/api/albums/${albumToEdit.id}`, {
           method: 'PUT',
           headers: {
@@ -123,6 +154,23 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
           },
           body: formData,
         });
+
+        // Also upload newly added files if any
+        const newFiles = albumImages.filter(item => !item.id && item.file);
+        if (newFiles.length > 0) {
+          const imagesFormData = new FormData();
+          newFiles.forEach((item) => {
+             imagesFormData.append('images', item.file);
+          });
+          await fetch(`http://localhost:8081/api/albums/${albumToEdit.id}/images`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            },
+            body: imagesFormData,
+          });
+        }
+
         if (response.ok) {
           alert("Album updated successfully!");
           onClose();
@@ -130,12 +178,14 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
           alert("Failed to update album");
         }
       } else {
+        // Create new album
         const formData = new FormData();
         formData.append('title', title);
         formData.append('coverImage', coverImageFile);
         
-        albumImageFiles.forEach((file) => {
-           formData.append('images', file);
+        const newFiles = albumImages.filter(item => !item.id && item.file);
+        newFiles.forEach((item) => {
+           formData.append('images', item.file);
         });
 
         const response = await fetch('http://localhost:8081/api/albums', {
@@ -153,7 +203,6 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
           setCoverImage(null);
           setCoverImageFile(null);
           setAlbumImages([]);
-          setAlbumImageFiles([]);
         } else {
           const errorText = await response.text();
           alert("Failed to add album: " + errorText);
@@ -391,11 +440,11 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
               </>
             ) : (
               <Box sx={{ width: '100%', height: '100%', display: 'flex', flexWrap: 'wrap', gap: '16px', p: 2, overflowY: 'auto' }}>
-                {albumImages.map((src, idx) => (
+                {albumImages.map((item, idx) => (
                   <Box key={idx} sx={{ position: 'relative', width: '80px', height: '80px' }}>
                     <Box
                       component="img"
-                      src={src}
+                      src={item.src}
                       sx={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }}
                     />
                     <IconButton
