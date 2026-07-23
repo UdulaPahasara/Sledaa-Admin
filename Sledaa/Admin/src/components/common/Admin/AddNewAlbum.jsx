@@ -11,6 +11,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
+import ValidationPopup from '../../Popup/ValidationPopup';
 
 const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, albumToEdit = null }) => {
   const [title, setTitle] = useState('');
@@ -18,6 +19,15 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
   const [coverImageFile, setCoverImageFile] = useState(null);
   const [albumImages, setAlbumImages] = useState([]); // Holds array of { id, src, file }
   const [loading, setLoading] = useState(false);
+  const [popupOpen, setPopupOpen] = useState(false);
+  const [popupMessage, setPopupMessage] = useState('');
+  const [popupCallback, setPopupCallback] = useState(null);
+
+  const showPopup = (msg, callback = null) => {
+    setPopupMessage(msg);
+    setPopupCallback(() => callback);
+    setPopupOpen(true);
+  };
   
   const coverInputRef = useRef(null);
   const albumInputRef = useRef(null);
@@ -80,12 +90,12 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
           }
         });
         if (!response.ok) {
-          alert("Failed to delete image from album on server");
+          showPopup("Failed to delete image from album on server");
           return;
         }
       } catch (error) {
         console.error("Error deleting image", error);
-        alert("Error connection to delete image");
+        showPopup("Error connection to delete image");
         return;
       }
     }
@@ -96,20 +106,20 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
     if (!isAddImageOnly && !albumToEdit) {
       // Create new album
       if (!title || !coverImageFile) {
-        alert("Please provide a title and a cover image.");
+        showPopup("Please provide a title and a cover image.");
         return;
       }
     } else if (isAddImageOnly) {
       // Add images to existing album
       const newFiles = albumImages.filter(item => !item.id && item.file);
       if (newFiles.length === 0) {
-        alert("Please add at least one image.");
+        showPopup("Please add at least one image.");
         return;
       }
     } else if (albumToEdit) {
       // Edit album
       if (!title) {
-        alert("Please provide a title.");
+        showPopup("Please provide a title.");
         return;
       }
     }
@@ -133,11 +143,12 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
         });
 
         if (response.ok) {
-          alert("Images added successfully!");
-          onClose();
-          setAlbumImages([]);
+          showPopup("Images added successfully!", () => {
+            onClose();
+            setAlbumImages([]);
+          });
         } else {
-          alert("Failed to add images");
+          showPopup("Failed to add images");
         }
       } else if (albumToEdit) {
         // Edit Album details (title, cover)
@@ -172,10 +183,11 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
         }
 
         if (response.ok) {
-          alert("Album updated successfully!");
-          onClose();
+          showPopup("Album updated successfully!", () => {
+            onClose();
+          });
         } else {
-          alert("Failed to update album");
+          showPopup("Failed to update album");
         }
       } else {
         // Create new album
@@ -197,20 +209,21 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
         });
 
         if (response.ok) {
-          alert("Album added successfully!");
-          onClose();
-          setTitle('');
-          setCoverImage(null);
-          setCoverImageFile(null);
-          setAlbumImages([]);
+          showPopup("Album added successfully!", () => {
+            onClose();
+            setTitle('');
+            setCoverImage(null);
+            setCoverImageFile(null);
+            setAlbumImages([]);
+          });
         } else {
           const errorText = await response.text();
-          alert("Failed to add album: " + errorText);
+          showPopup("Failed to add album: " + errorText);
         }
       }
     } catch (error) {
       console.error("Error saving:", error);
-      alert("An error occurred while saving.");
+      showPopup("An error occurred while saving.");
     } finally {
       setLoading(false);
     }
@@ -513,6 +526,15 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
           )}
         </Button>
       </Box>
+
+      <ValidationPopup 
+        open={popupOpen} 
+        message={popupMessage} 
+        onClose={() => {
+          setPopupOpen(false);
+          if (popupCallback) popupCallback();
+        }} 
+      />
     </Dialog>
   );
 };
