@@ -6,7 +6,10 @@ import userAccIcon from '../../../assets/Admin/SideBar/useAcc.webp';
 import { useAuth } from '../../../context/AuthContext';
 
 const TopBar = ({ onMenuToggle, isMobile }) => {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+
+  const userName = user?.name || 'Kamal Rathnayaka';
+
   return (
     <Box
       sx={{
@@ -72,7 +75,7 @@ const TopBar = ({ onMenuToggle, isMobile }) => {
             />
           </Box>
 
-          {/* Text Section — hide name on very small screens */}
+          {/* Text Section */}
           <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <Typography
               sx={{
@@ -81,7 +84,7 @@ const TopBar = ({ onMenuToggle, isMobile }) => {
                 fontSize: '10px',
                 lineHeight: '100%',
                 color: 'rgba(255, 255, 255, 1)',
-                marginBottom: '4px',
+                marginBottom: '3px',
               }}
             >
               Welcome
@@ -89,14 +92,14 @@ const TopBar = ({ onMenuToggle, isMobile }) => {
             <Typography
               sx={{
                 fontFamily: 'Poppins, sans-serif',
-                fontWeight: 400,
+                fontWeight: 500,
                 fontSize: { xs: '11px', md: '13px' },
                 lineHeight: '100%',
                 color: 'rgba(255, 255, 255, 1)',
-                display: { xs: 'none', sm: 'block' },
+                display: 'block',
               }}
             >
-              Kamal Rathnayaka
+              {userName}
             </Typography>
           </Box>
         </Box>
