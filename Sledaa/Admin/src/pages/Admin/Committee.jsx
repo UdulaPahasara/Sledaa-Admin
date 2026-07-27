@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, Button, IconButton, Popover } from '@mui/material';
+import { Box, Typography, Button, IconButton, Popover, Snackbar, Alert } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import AreYouSure from '../../components/Popup/AreYouSure';
@@ -72,6 +72,15 @@ const AdminCommittee = () => {
   // Edit mode states
   const [isEditMode, setIsEditMode] = useState(false);
   const [editMemberData, setEditMemberData] = useState(null);
+
+  // Snackbar state for validation messages
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+
+  const showError = (msg) => {
+    setSnackbarMessage(msg);
+    setSnackbarOpen(true);
+  };
 
   const fetchMembers = async () => {
     try {
@@ -267,7 +276,7 @@ const AdminCommittee = () => {
     } else {
       // Adding new cover images to the selected year
       if (!currentYear?.dbId) {
-        alert('Could not find the year record. Please try again.');
+        showError('Could not find the year record. Please try again.');
         return;
       }
       url = `http://localhost:8081/api/past-committee-years/${currentYear.dbId}/covers`;
@@ -380,7 +389,7 @@ const AdminCommittee = () => {
         
         const committeeObj = pastCommittees.find(c => c.id === selectedMemberId);
         if (!committeeObj?.dbId) {
-          alert('Cannot delete: year record not found.');
+          showError('Cannot delete: year record not found.');
           return;
         }
         url = `http://localhost:8081/api/past-committee-years/${committeeObj.dbId}`;
@@ -398,11 +407,11 @@ const AdminCommittee = () => {
         if (refreshFn) refreshFn();
       } else {
         const text = await response.text();
-        alert('Failed to delete: ' + text);
+        showError('Failed to delete: ' + text);
       }
     } catch (error) {
       console.error('Error deleting', error);
-      alert('An error occurred while deleting.');
+      showError('An error occurred while deleting.');
     }
   };
 
@@ -1044,7 +1053,7 @@ const AdminCommittee = () => {
               msg = parsed.message || parsed.error || msg;
             } catch (e) {}
             
-            alert('An error occurred while saving: ' + msg);
+            showError('An error occurred while saving: ' + msg);
           } finally {
             setIsAddPastCommitteeModalOpen(false);
             setIsEditMode(false);
@@ -1053,6 +1062,16 @@ const AdminCommittee = () => {
         }}
       />
 
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setSnackbarOpen(false)} severity="error" sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
