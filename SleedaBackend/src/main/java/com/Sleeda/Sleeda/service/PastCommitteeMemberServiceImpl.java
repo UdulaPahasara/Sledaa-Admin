@@ -1,7 +1,9 @@
 package com.Sleeda.Sleeda.service;
 
 import com.Sleeda.Sleeda.entity.PastCommitteeMember;
+import com.Sleeda.Sleeda.entity.PastCommitteeYear;
 import com.Sleeda.Sleeda.repository.PastCommitteeMemberRepository;
+import com.Sleeda.Sleeda.repository.PastCommitteeYearRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,6 +18,9 @@ public class PastCommitteeMemberServiceImpl implements PastCommitteeMemberServic
     private PastCommitteeMemberRepository memberRepository;
 
     @Autowired
+    private PastCommitteeYearRepository yearRepository;
+
+    @Autowired
     private FileStorageService fileStorageService;
 
     @Override
@@ -24,15 +29,25 @@ public class PastCommitteeMemberServiceImpl implements PastCommitteeMemberServic
     }
 
     @Override
+    public List<PastCommitteeMember> getMembersByYear(Long yearId) {
+        return memberRepository.findByPastCommitteeYearId(yearId);
+    }
+
+    @Override
     public Optional<PastCommitteeMember> getMemberById(Long id) {
         return memberRepository.findById(id);
     }
 
     @Override
-    public PastCommitteeMember saveMember(String name, String position, MultipartFile imageFile) {
+    public PastCommitteeMember saveMember(String name, String position, Long yearId, MultipartFile imageFile) {
         PastCommitteeMember member = new PastCommitteeMember();
         member.setName(name);
         member.setPosition(position);
+
+        if (yearId != null) {
+            PastCommitteeYear year = yearRepository.findById(yearId).orElse(null);
+            member.setPastCommitteeYear(year);
+        }
 
         if (imageFile != null && !imageFile.isEmpty()) {
             try {

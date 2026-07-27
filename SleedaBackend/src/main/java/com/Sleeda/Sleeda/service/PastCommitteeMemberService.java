@@ -8,7 +8,8 @@ import java.util.Optional;
 public interface PastCommitteeMemberService {
     List<PastCommitteeMember> getAllMembers();
     Optional<PastCommitteeMember> getMemberById(Long id);
-    PastCommitteeMember saveMember(String name, String position, MultipartFile imageFile);
+    List<PastCommitteeMember> getMembersByYear(Long yearId);
+    PastCommitteeMember saveMember(String name, String position, Long yearId, MultipartFile imageFile);
     PastCommitteeMember updateMember(Long id, String name, String position, MultipartFile imageFile);
     void deleteMember(Long id);
 }

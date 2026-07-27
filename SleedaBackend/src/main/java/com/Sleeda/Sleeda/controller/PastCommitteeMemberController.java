@@ -22,13 +22,19 @@ public class PastCommitteeMemberController {
         return ResponseEntity.ok(memberService.getAllMembers());
     }
 
+    @GetMapping("/year/{yearId}")
+    public ResponseEntity<List<PastCommitteeMember>> getMembersByYear(@PathVariable Long yearId) {
+        return ResponseEntity.ok(memberService.getMembersByYear(yearId));
+    }
+
     @PostMapping
     public ResponseEntity<PastCommitteeMember> createMember(
             @RequestParam("name") String name,
             @RequestParam("position") String position,
+            @RequestParam(value = "yearId", required = false) Long yearId,
             @RequestParam(value = "image", required = false) MultipartFile imageFile) {
         
-        PastCommitteeMember createdMember = memberService.saveMember(name, position, imageFile);
+        PastCommitteeMember createdMember = memberService.saveMember(name, position, yearId, imageFile);
         return new ResponseEntity<>(createdMember, HttpStatus.CREATED);
     }
 

@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface PastCommitteeMemberRepository extends JpaRepository<PastCommitteeMember, Long> {
+    java.util.List<PastCommitteeMember> findByPastCommitteeYearId(Long yearId);
 }

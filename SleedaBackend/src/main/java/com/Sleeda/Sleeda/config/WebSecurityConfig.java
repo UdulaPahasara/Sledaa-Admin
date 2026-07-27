@@ -47,6 +47,9 @@ public class WebSecurityConfig {
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/committee/**").permitAll()
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/past-committee/**").permitAll()
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/committee-covers/**").permitAll()
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/past-committee-years/**").permitAll()
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/past-committee-covers/**").permitAll()
+                    .requestMatchers("/error").permitAll()
                     .anyRequest().authenticated()
             );
 

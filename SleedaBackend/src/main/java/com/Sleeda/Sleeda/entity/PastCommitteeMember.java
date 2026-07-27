@@ -33,6 +33,11 @@ public class PastCommitteeMember {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "past_committee_year_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private PastCommitteeYear pastCommitteeYear;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
