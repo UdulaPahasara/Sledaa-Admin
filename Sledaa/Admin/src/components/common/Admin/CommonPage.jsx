@@ -141,6 +141,7 @@ const EventCard = ({ event, index, onEdit, onDelete }) => {
 
       {/* ── Action Popover (Edit / Delete) ──────────────── */}
       <Popover
+        disableScrollLock={true}
         id={id}
         open={open}
         anchorEl={anchorEl}
@@ -153,7 +154,7 @@ const EventCard = ({ event, index, onEdit, onDelete }) => {
             sx: {
               minWidth: '110px',
               borderRadius: '10px',
-              overflow: 'visible',
+              overflow: 'hidden',
               border: '1px solid rgba(0,0,0,0.08)',
               boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.12)',
               backgroundColor: '#fff',
@@ -171,6 +172,8 @@ const EventCard = ({ event, index, onEdit, onDelete }) => {
             padding: '12px 18px',
             cursor: 'pointer',
             borderBottom: '1px solid #eeeeee',
+            borderTopLeftRadius: '10px',
+            borderTopRightRadius: '10px',
             '&:hover': { backgroundColor: '#f5f7ff' },
           }}
         >
@@ -192,6 +195,8 @@ const EventCard = ({ event, index, onEdit, onDelete }) => {
           sx={{
             padding: '12px 18px',
             cursor: 'pointer',
+            borderBottomLeftRadius: '10px',
+            borderBottomRightRadius: '10px',
             '&:hover': { backgroundColor: '#fff5f5' },
           }}
         >

@@ -36,10 +36,9 @@ public class PastCommitteeYearController {
     @PostMapping("/past-committee-years")
     public ResponseEntity<PastCommitteeYear> createYear(
             @RequestParam("yearLabel") String yearLabel,
-            @RequestParam(value = "yearName", required = false) String yearName,
-            @RequestParam(value = "coverImage", required = false) MultipartFile coverImage) {
+            @RequestParam(value = "yearName", required = false) String yearName) {
 
-        PastCommitteeYear created = service.createYear(yearLabel, yearName, coverImage);
+        PastCommitteeYear created = service.createYear(yearLabel, yearName);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
@@ -51,10 +50,9 @@ public class PastCommitteeYearController {
     public ResponseEntity<PastCommitteeYear> updateYear(
             @PathVariable Long id,
             @RequestParam(value = "yearLabel", required = false) String yearLabel,
-            @RequestParam(value = "yearName", required = false) String yearName,
-            @RequestParam(value = "coverImage", required = false) MultipartFile coverImage) {
+            @RequestParam(value = "yearName", required = false) String yearName) {
 
-        PastCommitteeYear updated = service.updateYear(id, yearLabel, yearName, coverImage);
+        PastCommitteeYear updated = service.updateYear(id, yearLabel, yearName);
         return ResponseEntity.ok(updated);
     }
 

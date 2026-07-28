@@ -10,8 +10,8 @@ public interface PastCommitteeYearService {
 
     // Year CRUD
     List<PastCommitteeYear> getAllYears();
-    PastCommitteeYear createYear(String yearLabel, String yearName, MultipartFile coverImageFile);
-    PastCommitteeYear updateYear(Long id, String yearLabel, String yearName, MultipartFile coverImageFile);
+    PastCommitteeYear createYear(String yearLabel, String yearName);
+    PastCommitteeYear updateYear(Long id, String yearLabel, String yearName);
     void deleteYear(Long id);
 
     // Cover images for a specific year

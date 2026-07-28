@@ -155,6 +155,8 @@ const AdminCommittee = () => {
     }
   };
 
+
+
   React.useEffect(() => {
     fetchMembers();
     fetchCoverImages();
@@ -415,6 +417,7 @@ const AdminCommittee = () => {
     }
   };
 
+
   const open = Boolean(anchorEl);
   const id = open ? 'committee-action-popover' : undefined;
 
@@ -654,10 +657,7 @@ const AdminCommittee = () => {
                       justifyContent: 'center',
                       width: '100%',
                       height: '257px',
-                      backgroundColor: committee.imageUrl ? 'transparent' : 'rgba(0, 28, 166, 1)',
-                      backgroundImage: committee.imageUrl ? `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url("${committee.imageUrl}")` : 'none',
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
+                      backgroundColor: 'rgba(0, 28, 166, 1)',
                       borderRadius: '10px',
                       cursor: 'pointer',
                       transition: 'transform 0.3s ease',
@@ -772,7 +772,7 @@ const AdminCommittee = () => {
               </Box>
 
               {/* Past Year Cover Images rendered from pastYearCoverImages state */}
-              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: '30px', justifyContent: 'center' }}>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: '30px', justifyContent: 'center', width: '100%' }}>
                 {pastYearCoverImages.length > 0 ? (
                   <>
                     {pastYearCoverImages.find(img => img.isMain) ? (
@@ -788,6 +788,7 @@ const AdminCommittee = () => {
                         onClickMenu={(e) => handleMenuClick(e, pastYearCoverImages[0].id, 'pastYearCover')}
                       />
                     )}
+                    
                     {pastYearCoverImages.filter(img => !img.isMain).length > 0 && (
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                         {pastYearCoverImages.filter(img => !img.isMain).map(img => (
@@ -906,11 +907,11 @@ const AdminCommittee = () => {
 
       {/* ── ACTION POPOVER (Edit/Delete) ───────────────────────────────── */}
       <Popover
+        disableScrollLock={true}
         id={id}
         open={open}
         anchorEl={anchorEl}
         onClose={handleMenuClose}
-        disableScrollLock={true}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         slotProps={{
@@ -1018,9 +1019,7 @@ const AdminCommittee = () => {
           const formData = new FormData();
           formData.append('yearLabel', data.yearLabel || data.yearName.replace(' Committee', '').trim());
           formData.append('yearName', data.yearName);
-          if (data.image) {
-            formData.append('coverImage', data.image);
-          }
+
 
           let url = 'http://localhost:8081/api/past-committee-years';
           let method = 'POST';

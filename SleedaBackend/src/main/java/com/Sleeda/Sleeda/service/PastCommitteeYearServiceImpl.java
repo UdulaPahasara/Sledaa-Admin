@@ -3,6 +3,8 @@ package com.Sleeda.Sleeda.service;
 import com.Sleeda.Sleeda.entity.PastCommitteeYear;
 import com.Sleeda.Sleeda.entity.PastCommitteeYearCoverImage;
 import com.Sleeda.Sleeda.repository.PastCommitteeYearCoverImageRepository;
+import com.Sleeda.Sleeda.repository.PastCommitteeMemberRepository;
+import com.Sleeda.Sleeda.entity.PastCommitteeMember;
 import com.Sleeda.Sleeda.repository.PastCommitteeYearRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,6 +15,8 @@ import org.springframework.http.HttpStatus;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.PersistenceContext;
 
 @Service
 public class PastCommitteeYearServiceImpl implements PastCommitteeYearService {
@@ -22,6 +26,9 @@ public class PastCommitteeYearServiceImpl implements PastCommitteeYearService {
 
     @Autowired
     private PastCommitteeYearCoverImageRepository coverImageRepository;
+
+    @Autowired
+    private PastCommitteeMemberRepository memberRepository;
 
     @Autowired
     private FileStorageService fileStorageService;
@@ -34,7 +41,7 @@ public class PastCommitteeYearServiceImpl implements PastCommitteeYearService {
     }
 
     @Override
-    public PastCommitteeYear createYear(String yearLabel, String yearName, MultipartFile coverImageFile) {
+    public PastCommitteeYear createYear(String yearLabel, String yearName) {
         // Upsert: if a year with this label already exists, update it instead of inserting a duplicate
         Optional<PastCommitteeYear> existing = yearRepository.findByYearLabel(yearLabel);
         PastCommitteeYear year = existing.orElseGet(PastCommitteeYear::new);
@@ -42,20 +49,11 @@ public class PastCommitteeYearServiceImpl implements PastCommitteeYearService {
         year.setYearLabel(yearLabel);
         year.setYearName(yearName != null ? yearName : yearLabel + " Committee");
 
-        if (coverImageFile != null && !coverImageFile.isEmpty()) {
-            try {
-                String url = fileStorageService.storeFile(coverImageFile, "past_committee_years");
-                year.setCoverImageUrl(url);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to store year cover image", e);
-            }
-        }
-
         return yearRepository.save(year);
     }
 
     @Override
-    public PastCommitteeYear updateYear(Long id, String yearLabel, String yearName, MultipartFile coverImageFile) {
+    public PastCommitteeYear updateYear(Long id, String yearLabel, String yearName) {
         PastCommitteeYear year = yearRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Past committee year not found with id: " + id));
 
@@ -72,21 +70,28 @@ public class PastCommitteeYearServiceImpl implements PastCommitteeYearService {
             year.setYearName(yearName);
         }
 
-        if (coverImageFile != null && !coverImageFile.isEmpty()) {
-            try {
-                String url = fileStorageService.storeFile(coverImageFile, "past_committee_years");
-                year.setCoverImageUrl(url);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to store year cover image", e);
-            }
-        }
-
         return yearRepository.save(year);
     }
 
+    @PersistenceContext
+    private jakarta.persistence.EntityManager entityManager;
+
     @Override
+    @Transactional
     public void deleteYear(Long id) {
-        yearRepository.findById(id).ifPresent(yearRepository::delete);
+        if (!yearRepository.existsById(id)) return;
+        // Use native SQL to delete all children and parent in correct order
+        // entityManager.flush() after each child delete forces MySQL to commit the rows
+        // BEFORE the FK-constrained parent row is attempted
+        entityManager.createNativeQuery("DELETE FROM past_committee_members WHERE past_committee_year_id = :id")
+                .setParameter("id", id)
+                .executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM past_committee_year_cover_images WHERE past_committee_year_id = :id")
+                .setParameter("id", id)
+                .executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM past_committee_years WHERE id = :id")
+                .setParameter("id", id)
+                .executeUpdate();
     }
 
     // ── Cover Images for a Year ──────────────────────────────────────────────

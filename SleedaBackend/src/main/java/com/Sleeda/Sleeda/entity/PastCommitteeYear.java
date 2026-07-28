@@ -27,9 +27,6 @@ public class PastCommitteeYear {
     @Column(nullable = false)
     private String yearName; // e.g. "2025 Committee"
 
-    // The primary card thumbnail image URL
-    @Column(name = "cover_image_url")
-    private String coverImageUrl;
 
     @Column(name = "display_order")
     private Integer displayOrder = 0;
@@ -38,6 +35,9 @@ public class PastCommitteeYear {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "pastCommitteeYear", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "pastCommitteeYear")
     private List<PastCommitteeYearCoverImage> coverImages = new ArrayList<>();
+
+    @OneToMany(mappedBy = "pastCommitteeYear")
+    private List<PastCommitteeMember> members = new ArrayList<>();
 }
