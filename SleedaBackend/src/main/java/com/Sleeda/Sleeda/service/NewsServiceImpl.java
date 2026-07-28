@@ -54,7 +54,10 @@ public class NewsServiceImpl implements NewsService {
     @Override
     @Transactional
     public void deleteNews(Long newsId) {
-        newsRepository.deleteById(newsId);
+        newsRepository.findById(newsId).ifPresent(news -> {
+            fileStorageService.deleteFile(news.getCoverImageUrl());
+            newsRepository.delete(news);
+        });
     }
 
     @Override

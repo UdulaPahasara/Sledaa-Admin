@@ -55,7 +55,10 @@ public class CommitteeMemberServiceImpl implements CommitteeMemberService {
     @Override
     @Transactional
     public void deleteMember(Long memberId) {
-        committeeMemberRepository.deleteById(memberId);
+        committeeMemberRepository.findById(memberId).ifPresent(member -> {
+            fileStorageService.deleteFile(member.getImageUrl());
+            committeeMemberRepository.delete(member);
+        });
     }
 
     @Override

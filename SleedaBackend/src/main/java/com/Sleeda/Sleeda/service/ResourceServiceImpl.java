@@ -56,7 +56,10 @@ public class ResourceServiceImpl implements ResourceService {
     @Override
     @Transactional
     public void deleteResource(Long resourceId) {
-        resourceRepository.deleteById(resourceId);
+        resourceRepository.findById(resourceId).ifPresent(resource -> {
+            fileStorageService.deleteFile(resource.getFileUrl());
+            resourceRepository.delete(resource);
+        });
     }
 
     @Override

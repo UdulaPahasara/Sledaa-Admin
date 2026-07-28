@@ -55,7 +55,10 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public void deleteEvent(Long eventId) {
-        eventRepository.deleteById(eventId);
+        eventRepository.findById(eventId).ifPresent(event -> {
+            fileStorageService.deleteFile(event.getCoverImageUrl());
+            eventRepository.delete(event);
+        });
     }
 
     @Override

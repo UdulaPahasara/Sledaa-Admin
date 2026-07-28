@@ -23,7 +23,7 @@ const ActionImageBox = ({ src, sx, onClickMenu }) => (
       sx={{
         width: '100%',
         height: '100%',
-        objectFit: 'cover',
+        objectFit: sx.objectFit || 'cover',
         borderRadius: sx.borderRadius || '10px'
       }}
     />
@@ -559,7 +559,7 @@ const AdminCommittee = () => {
               {/* Member Image with Action Menu */}
               <ActionImageBox 
                 src={member.imageUrl ? `http://localhost:8081${member.imageUrl}` : ourTeamImg} 
-                sx={{ width: '195.56px', height: '178.82px', borderRadius: '6.63px', mb: '16px', backgroundColor: '#f5f5f5' }} 
+                sx={{ width: '195.56px', height: '178.82px', borderRadius: '6.63px', mb: '16px', backgroundColor: '#f5f5f5', objectFit: 'contain' }} 
                 onClickMenu={(e) => handleMenuClick(e, member.id)} 
               />
               
@@ -634,7 +634,7 @@ const AdminCommittee = () => {
             {/* Past Year Cards Grid */}
             <Box sx={{ 
               display: 'grid', 
-              gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, 
+              gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)' }, 
               gap: '20px',
               width: '100%'
             }}>
@@ -656,7 +656,7 @@ const AdminCommittee = () => {
                       alignItems: 'center',
                       justifyContent: 'center',
                       width: '100%',
-                      height: '257px',
+                      height: {xs:"150px",sm:"200px",md:"210px",lg:"257px"},
                       backgroundColor: 'rgba(0, 28, 166, 1)',
                       borderRadius: '10px',
                       cursor: 'pointer',
@@ -870,7 +870,7 @@ const AdminCommittee = () => {
                     {/* Member Image with Action Menu */}
                     <ActionImageBox 
                       src={member.imageUrl ? `http://localhost:8081${member.imageUrl}` : ourTeamImg} 
-                      sx={{ width: '195.56px', height: '178.82px', borderRadius: '6.63px', mb: '16px', backgroundColor: '#f5f5f5' }} 
+                      sx={{ width: '195.56px', height: '178.82px', borderRadius: '6.63px', mb: '16px', backgroundColor: '#f5f5f5', objectFit: 'contain' }} 
                       onClickMenu={(e) => handleMenuClick(e, member.id, 'past')} 
                     />
                     

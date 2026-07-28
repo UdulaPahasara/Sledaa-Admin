@@ -54,7 +54,10 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional
     public void deleteProject(Long projectId) {
-        projectRepository.deleteById(projectId);
+        projectRepository.findById(projectId).ifPresent(project -> {
+            fileStorageService.deleteFile(project.getCoverImageUrl());
+            projectRepository.delete(project);
+        });
     }
 
     @Override

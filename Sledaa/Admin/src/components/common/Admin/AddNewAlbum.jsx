@@ -129,26 +129,38 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
       const token = localStorage.getItem('jwt_token');
 
       if (isAddImageOnly) {
-        const formData = new FormData();
         const newFiles = albumImages.filter(item => !item.id && item.file);
-        newFiles.forEach((item) => {
-           formData.append('images', item.file);
-        });
-        const response = await fetch(`http://localhost:8081/api/albums/${albumId}/images`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
-          body: formData,
-        });
+        const batchSize = 5;
+        let allSuccess = true;
+        
+        for (let i = 0; i < newFiles.length; i += batchSize) {
+          const batch = newFiles.slice(i, i + batchSize);
+          const formData = new FormData();
+          batch.forEach((item) => {
+             formData.append('images', item.file);
+          });
+          
+          const response = await fetch(`http://localhost:8081/api/albums/${albumId}/images`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            },
+            body: formData,
+          });
+          
+          if (!response.ok) {
+            allSuccess = false;
+            break;
+          }
+        }
 
-        if (response.ok) {
+        if (allSuccess) {
           showPopup("Images added successfully!", () => {
             onClose();
             setAlbumImages([]);
           });
         } else {
-          showPopup("Failed to add images");
+          showPopup("Failed to add some images due to an error.");
         }
       } else if (albumToEdit) {
         // Edit Album details (title, cover)
@@ -168,37 +180,38 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
 
         // Also upload newly added files if any
         const newFiles = albumImages.filter(item => !item.id && item.file);
+        let imagesUploadSuccess = true;
         if (newFiles.length > 0) {
-          const imagesFormData = new FormData();
-          newFiles.forEach((item) => {
-             imagesFormData.append('images', item.file);
-          });
-          await fetch(`http://localhost:8081/api/albums/${albumToEdit.id}/images`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`
-            },
-            body: imagesFormData,
-          });
+          const batchSize = 5;
+          for (let i = 0; i < newFiles.length; i += batchSize) {
+            const batch = newFiles.slice(i, i + batchSize);
+            const imagesFormData = new FormData();
+            batch.forEach((item) => {
+               imagesFormData.append('images', item.file);
+            });
+            const imgRes = await fetch(`http://localhost:8081/api/albums/${albumToEdit.id}/images`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`
+              },
+              body: imagesFormData,
+            });
+            if (!imgRes.ok) imagesUploadSuccess = false;
+          }
         }
 
-        if (response.ok) {
+        if (response.ok && imagesUploadSuccess) {
           showPopup("Album updated successfully!", () => {
             onClose();
           });
         } else {
-          showPopup("Failed to update album");
+          showPopup("Failed to fully update album or images.");
         }
       } else {
-        // Create new album
+        // Create new album (Title and Cover Image ONLY first)
         const formData = new FormData();
         formData.append('title', title);
         formData.append('coverImage', coverImageFile);
-        
-        const newFiles = albumImages.filter(item => !item.id && item.file);
-        newFiles.forEach((item) => {
-           formData.append('images', item.file);
-        });
 
         const response = await fetch('http://localhost:8081/api/albums', {
           method: 'POST',
@@ -209,6 +222,29 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
         });
 
         if (response.ok) {
+          const createdAlbum = await response.json();
+          const newFiles = albumImages.filter(item => !item.id && item.file);
+          
+          // Upload remaining images in small batches (5 at a time) to avoid 413 errors
+          if (newFiles.length > 0) {
+            const batchSize = 5;
+            for (let i = 0; i < newFiles.length; i += batchSize) {
+              const batch = newFiles.slice(i, i + batchSize);
+              const batchFormData = new FormData();
+              batch.forEach((item) => {
+                 batchFormData.append('images', item.file);
+              });
+              
+              await fetch(`http://localhost:8081/api/albums/${createdAlbum.id}/images`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                },
+                body: batchFormData,
+              });
+            }
+          }
+
           showPopup("Album added successfully!", () => {
             onClose();
             setTitle('');
@@ -379,22 +415,21 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
         <Box
           sx={{
             width: '100%',
-            height: '182px',
+            minHeight: '182px',
             backgroundColor: 'rgba(243, 243, 243, 1)',
             borderRadius: '10px',
             display: 'flex',
             justifyContent: 'center',
-            alignItems: 'center',
+            alignItems: 'stretch',
             padding: '24px',
             boxSizing: 'border-box'
           }}
         >
           {/* Dashed Inner Box */}
           <Box
-            onClick={() => albumInputRef.current?.click()}
             sx={{
               width: '100%',
-              height: '100%',
+              minHeight: '134px',
               borderRadius: '5.81px',
               border: '0.73px dashed rgba(0, 0, 0, 1)',
               display: 'flex',
@@ -402,8 +437,7 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
               justifyContent: 'center',
               alignItems: 'center',
               gap: '12px',
-              cursor: 'pointer',
-              '&:hover': { backgroundColor: 'rgba(0,0,0,0.02)' }
+              padding: albumImages.length > 0 ? '16px' : '0',
             }}
           >
             <input 
@@ -412,11 +446,27 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
               multiple
               style={{ display: 'none' }} 
               ref={albumInputRef}
-              onChange={handleAlbumUpload}
+              onChange={(e) => {
+                handleAlbumUpload(e);
+                e.target.value = ''; // Reset input to allow selecting same files again
+              }}
             />
 
             {albumImages.length === 0 ? (
-              <>
+              <Box
+                onClick={() => albumInputRef.current?.click()}
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  gap: '12px',
+                  '&:hover': { backgroundColor: 'rgba(0,0,0,0.02)' }
+                }}
+              >
                 <FileUploadOutlinedIcon sx={{ width: '20px', height: '21px', color: '#000' }} />
                 <Typography
                   sx={{
@@ -429,7 +479,7 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
                     textAlign: 'center',
                   }}
                 >
-                  Upload Your Profile Photo From Your Device.
+                  Upload Photos From Your Device
                 </Typography>
                 <Button
                   component="span"
@@ -447,12 +497,12 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
                   }}
                 >
                   <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: '10px', lineHeight: '10px' }}>
-                    Choose Profile
+                    Choose Photos
                   </Typography>
                 </Button>
-              </>
+              </Box>
             ) : (
-              <Box sx={{ width: '100%', height: '100%', display: 'flex', flexWrap: 'wrap', gap: '16px', p: 2, overflowY: 'auto' }}>
+              <Box sx={{ width: '100%', display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
                 {albumImages.map((item, idx) => (
                   <Box key={idx} sx={{ position: 'relative', width: '80px', height: '80px' }}>
                     <Box
@@ -480,13 +530,33 @@ const AddNewAlbum = ({ open, onClose, isAddImageOnly = false, albumId = null, al
                     </IconButton>
                   </Box>
                 ))}
+                {/* Add More Button */}
+                <Box
+                  onClick={() => albumInputRef.current?.click()}
+                  sx={{
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '8px',
+                    border: '1px dashed #000',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    backgroundColor: 'transparent',
+                    '&:hover': { backgroundColor: 'rgba(0,0,0,0.05)' }
+                  }}
+                >
+                  <AddIcon sx={{ color: '#000', fontSize: '24px' }} />
+                  <Typography sx={{ fontSize: '10px', fontFamily: 'Poppins, sans-serif', color: '#000' }}>
+                    Add More
+                  </Typography>
+                </Box>
               </Box>
             )}
           </Box>
         </Box>
-
       </Box>
-
       {/* ── Save Button ── */}
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
         <Button

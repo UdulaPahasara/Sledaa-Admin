@@ -44,4 +44,20 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
         // For example: /uploads/albums/123e4567-e89b-12d3-a456-426614174000.jpg
         return "/" + uploadDir + "/" + directory + "/" + newFilename;
     }
+
+    @Override
+    public void deleteFile(String fileUrl) {
+        if (fileUrl == null || fileUrl.trim().isEmpty()) {
+            return;
+        }
+        try {
+            if (fileUrl.startsWith("/")) {
+                fileUrl = fileUrl.substring(1);
+            }
+            Path filePath = Paths.get(fileUrl).toAbsolutePath().normalize();
+            Files.deleteIfExists(filePath);
+        } catch (Exception e) {
+            System.err.println("Failed to delete physical file: " + fileUrl + " - " + e.getMessage());
+        }
+    }
 }

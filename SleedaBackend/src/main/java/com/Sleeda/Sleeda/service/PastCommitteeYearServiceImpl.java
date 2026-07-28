@@ -80,6 +80,14 @@ public class PastCommitteeYearServiceImpl implements PastCommitteeYearService {
     @Transactional
     public void deleteYear(Long id) {
         if (!yearRepository.existsById(id)) return;
+        
+        // Delete physical files
+        memberRepository.findByPastCommitteeYearId(id).forEach(member -> {
+            fileStorageService.deleteFile(member.getImageUrl());
+        });
+        coverImageRepository.findByPastCommitteeYearIdOrderByCreatedAtAsc(id).forEach(image -> {
+            fileStorageService.deleteFile(image.getImageUrl());
+        });
         // Use native SQL to delete all children and parent in correct order
         // entityManager.flush() after each child delete forces MySQL to commit the rows
         // BEFORE the FK-constrained parent row is attempted
@@ -161,6 +169,9 @@ public class PastCommitteeYearServiceImpl implements PastCommitteeYearService {
 
     @Override
     public void deleteCoverImage(Long coverImageId) {
-        coverImageRepository.findById(coverImageId).ifPresent(coverImageRepository::delete);
+        coverImageRepository.findById(coverImageId).ifPresent(image -> {
+            fileStorageService.deleteFile(image.getImageUrl());
+            coverImageRepository.delete(image);
+        });
     }
 }

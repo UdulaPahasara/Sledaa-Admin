@@ -124,13 +124,24 @@ public class AlbumServiceImpl implements AlbumService {
     @Override
     @Transactional
     public void deleteImage(Long imageId) {
-        albumImageRepository.deleteById(imageId);
+        albumImageRepository.findById(imageId).ifPresent(image -> {
+            fileStorageService.deleteFile(image.getImageUrl());
+            albumImageRepository.delete(image);
+        });
     }
 
     @Override
     @Transactional
     public void deleteAlbum(Long albumId) {
-        albumRepository.deleteById(albumId);
+        albumRepository.findById(albumId).ifPresent(album -> {
+            fileStorageService.deleteFile(album.getCoverImageUrl());
+            if (album.getImages() != null) {
+                for (AlbumImage image : album.getImages()) {
+                    fileStorageService.deleteFile(image.getImageUrl());
+                }
+            }
+            albumRepository.delete(album);
+        });
     }
 
     @Override
