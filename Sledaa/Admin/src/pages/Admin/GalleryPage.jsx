@@ -10,8 +10,8 @@ import CircularProgress from '@mui/material/CircularProgress';
 const GalleryPage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const isXs = useMediaQuery(theme.breakpoints.down('sm'));   // < 600px  (mobile)
-  const isSm = useMediaQuery(theme.breakpoints.between('sm', 'md')); // 600–900 (tablet)
+  const isXs = useMediaQuery(theme.breakpoints.down('sm'));   
+  const isSm = useMediaQuery(theme.breakpoints.between('sm', 'md')); 
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedAlbum, setSelectedAlbum] = useState(null);
@@ -31,7 +31,7 @@ const GalleryPage = () => {
       });
       if (response.ok) {
         const data = await response.json();
-        setAlbums(data);
+        setAlbums(Array.isArray(data) ? data.reverse() : data);
       }
     } catch (error) {
       console.error("Failed to fetch albums", error);
@@ -57,8 +57,8 @@ const GalleryPage = () => {
   const handleDeleteClick = (e) => {
     e.stopPropagation();
     e.preventDefault();
-    setAnchorEl(null); // Close the popover directly
-    setDeleteConfirmOpen(true); // Open dialog immediately
+    setAnchorEl(null); 
+    setDeleteConfirmOpen(true); 
   };
 
   const handleConfirmDelete = async () => {

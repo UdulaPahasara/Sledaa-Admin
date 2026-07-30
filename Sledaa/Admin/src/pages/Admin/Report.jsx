@@ -21,7 +21,7 @@ const Report = () => {
       const response = await fetch('http://localhost:8081/api/reports');
       if (response.ok) {
         const data = await response.json();
-        setReports(data);
+        setReports(Array.isArray(data) ? data.reverse() : data);
       }
     } catch (error) {
       console.error("Failed to fetch reports", error);

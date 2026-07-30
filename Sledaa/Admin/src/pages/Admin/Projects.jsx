@@ -9,7 +9,7 @@ const Projects = () => {
       const response = await fetch('http://localhost:8081/api/projects');
       if (response.ok) {
         const data = await response.json();
-        setProjects(data);
+        setProjects(Array.isArray(data) ? data.reverse() : data);
       }
     } catch (error) {
       console.error("Failed to fetch projects", error);

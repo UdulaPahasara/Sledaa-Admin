@@ -9,7 +9,7 @@ const News = () => {
       const response = await fetch('http://localhost:8081/api/news');
       if (response.ok) {
         const data = await response.json();
-        setNews(data);
+        setNews(Array.isArray(data) ? data.reverse() : data);
       }
     } catch (error) {
       console.error("Failed to fetch news", error);

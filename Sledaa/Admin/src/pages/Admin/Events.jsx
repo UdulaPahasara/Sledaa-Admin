@@ -9,7 +9,7 @@ const Events = () => {
       const response = await fetch('http://localhost:8081/api/events');
       if (response.ok) {
         const data = await response.json();
-        setEvents(data);
+        setEvents(Array.isArray(data) ? data.reverse() : data);
       }
     } catch (error) {
       console.error("Failed to fetch events", error);
