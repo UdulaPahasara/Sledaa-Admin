@@ -1,14 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Typography, IconButton, Tooltip } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import LogoutIcon from '@mui/icons-material/Logout';
 import userAccIcon from '../../../assets/Admin/SideBar/useAcc.webp';
 import { useAuth } from '../../../context/AuthContext';
+import AreYouSure from '../../Popup/AreYouSure';
 
 const TopBar = ({ onMenuToggle, isMobile }) => {
   const { logout, user } = useAuth();
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
 
   const userName = user?.name || 'Kamal Rathnayaka';
+
+  const handleConfirmLogout = () => {
+    setLogoutConfirmOpen(false);
+    logout();
+  };
 
   return (
     <Box
@@ -107,7 +114,7 @@ const TopBar = ({ onMenuToggle, isMobile }) => {
         {/* ── Logout Button ── */}
         <Tooltip title="Logout">
           <IconButton 
-            onClick={logout} 
+            onClick={() => setLogoutConfirmOpen(true)} 
             sx={{ 
               color: '#fff', 
               ml: 2,
@@ -118,6 +125,13 @@ const TopBar = ({ onMenuToggle, isMobile }) => {
           </IconButton>
         </Tooltip>
       </Box>
+
+      {/* Logout Confirmation Popup */}
+      <AreYouSure 
+        open={logoutConfirmOpen} 
+        onClose={() => setLogoutConfirmOpen(false)} 
+        onConfirm={handleConfirmLogout} 
+      />
     </Box>
   );
 };
