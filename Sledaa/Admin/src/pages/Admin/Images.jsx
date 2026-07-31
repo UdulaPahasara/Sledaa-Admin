@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Typography, Button } from '@mui/material';
+import AdminSEO from '../../components/AdminSEO';
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
 import Fullscreen from "yet-another-react-lightbox/plugins/fullscreen";
@@ -85,6 +86,7 @@ const Images = () => {
                 boxSizing: 'border-box',
             }}
         >
+            <AdminSEO title={album ? `${album.title} | Manage Gallery` : "Manage Images"} />
             {/* ── Header ──────────────────────────────────────── */}
             <Box
                 sx={{

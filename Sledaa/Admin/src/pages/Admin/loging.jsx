@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Typography, TextField, Button, CircularProgress, IconButton, InputAdornment } from '@mui/material';
+import AdminSEO from '../../components/AdminSEO';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { useNavigate } from 'react-router-dom';
@@ -47,6 +48,7 @@ const Login = () => {
         padding: 2,
       }}
     >
+      <AdminSEO title="Login" />
       {/* Major Box */}
       <Box
         sx={{

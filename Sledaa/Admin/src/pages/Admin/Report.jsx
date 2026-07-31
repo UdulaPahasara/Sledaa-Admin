@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Button, Popover } from '@mui/material';
+import AdminSEO from '../../components/AdminSEO';
 import AddIcon from '@mui/icons-material/Add';
 import Pdf from '../../components/common/Admin/Pdf';
 import AreYouSure from '../../components/Popup/AreYouSure';
@@ -123,6 +124,7 @@ const Report = () => {
         fontFamily: 'Poppins, sans-serif',
       }}
     >
+      <AdminSEO title="Manage Annual Report" />
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '40px', flexWrap: 'wrap', gap: '20px' }}>
         <Typography
           sx={{

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import AdminSEO from '../../components/AdminSEO';
 import CommonPage from '../../components/common/Admin/CommonPage';
 
 const Events = () => {
@@ -67,13 +68,16 @@ const Events = () => {
   };
 
   return (
-    <CommonPage
-      title="EVENTS PAGE"
-      buttonText="Add New Event"
-      data={events}
-      onSave={handleSave}
-      onDelete={handleDelete}
-    />
+    <>
+      <AdminSEO title="Manage Events" />
+      <CommonPage
+        title="EVENTS PAGE"
+        buttonText="Add New Event"
+        data={events}
+        onSave={handleSave}
+        onDelete={handleDelete}
+      />
+    </>
   );
 };
 

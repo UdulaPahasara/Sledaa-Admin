@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AdminSEO from '../../components/AdminSEO';
 import { Box, Typography, Button, Popover, useMediaQuery, useTheme } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -99,6 +100,7 @@ const GalleryPage = () => {
         boxSizing: 'border-box',
       }}
     >
+      <AdminSEO title="Manage Gallery" />
       {/* ── Header ──────────────────────────────────────── */}
       <Box
         sx={{

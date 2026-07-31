@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import AdminSEO from '../../components/AdminSEO';
 import CommonPage from '../../components/common/Admin/CommonPage';
 
 const Projects = () => {
@@ -61,13 +62,16 @@ const Projects = () => {
   };
 
   return (
-    <CommonPage
-      title="PROJECTS PAGE"
-      buttonText="Add New Project"
-      data={projects}
-      onSave={handleSave}
-      onDelete={handleDelete}
-    />
+    <>
+      <AdminSEO title="Manage Projects" />
+      <CommonPage
+        title="PROJECTS PAGE"
+        buttonText="Add New Project"
+        data={projects}
+        onSave={handleSave}
+        onDelete={handleDelete}
+      />
+    </>
   );
 };
 

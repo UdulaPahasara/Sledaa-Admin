@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Typography, Button, IconButton, Popover, Snackbar, Alert } from '@mui/material';
+import AdminSEO from '../../components/AdminSEO';
 import AddIcon from '@mui/icons-material/Add';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import AreYouSure from '../../components/Popup/AreYouSure';
@@ -431,6 +432,7 @@ const AdminCommittee = () => {
         fontFamily: 'Poppins, sans-serif',
       }}
     >
+      <AdminSEO title="Manage Committee" />
       {/* ── COMMITTEE COVER IMAGE SECTION ────────────────────────────────── */}
       <Box sx={{ mb: '80px' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '40px', flexWrap: 'wrap', gap: '20px' }}>
