@@ -46,11 +46,11 @@ const EventCard = ({ event, index, onEdit, onDelete }) => {
         padding: {
           xs: '8.65px 9.07px 9.07px 9.07px', // mobile
           sm: imageLeft 
-            ? '16px 40px 16px 16px'  // tablet image left
-            : '16px 16px 16px 40px', // tablet image right
+            ? '16px 40px 16px 16px'  
+            : '16px 16px 16px 40px', 
           lg: imageLeft 
-            ? '8.65px 31.73px 9.07px 9.07px'  // desktop image left
-            : '8.65px 9.07px 9.07px 31.73px'  // desktop image right
+            ? '8.65px 31.73px 9.07px 9.07px'  
+            : '8.65px 9.07px 9.07px 31.73px'  
         },
         display: 'flex',
         flexDirection: { xs: 'column', sm: imageLeft ? 'row' : 'row-reverse' },
