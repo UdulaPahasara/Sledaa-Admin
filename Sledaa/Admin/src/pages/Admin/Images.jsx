@@ -83,6 +83,8 @@ const Images = () => {
             sx={{
                 padding: { xs: '16px', sm: '24px', md: '40px' },
                 width: '100%',
+                minHeight: '100vh',
+                backgroundColor: 'rgba(255, 255, 255, 1)',
                 boxSizing: 'border-box',
             }}
         >

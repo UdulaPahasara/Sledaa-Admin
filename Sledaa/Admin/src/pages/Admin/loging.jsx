@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Box, Typography, TextField, Button, CircularProgress, IconButton, InputAdornment } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, Typography, TextField, Button, CircularProgress, IconButton, InputAdornment, Checkbox, FormControlLabel } from '@mui/material';
 import AdminSEO from '../../components/AdminSEO';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -13,8 +13,19 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('rememberedEmail');
+    const savedPassword = localStorage.getItem('rememberedPassword');
+    if (savedEmail && savedPassword) {
+      setEmail(savedEmail);
+      setPassword(savedPassword);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -30,6 +41,13 @@ const Login = () => {
     setLoading(false);
 
     if (result.success) {
+      if (rememberMe) {
+        localStorage.setItem('rememberedEmail', email);
+        localStorage.setItem('rememberedPassword', password);
+      } else {
+        localStorage.removeItem('rememberedEmail');
+        localStorage.removeItem('rememberedPassword');
+      }
       // Navigate to admin gallery
       navigate('/admin/gallery'); 
     } else {
@@ -127,6 +145,9 @@ const Login = () => {
                 },
                 '& .MuiOutlinedInput-input': {
                   padding: '13px 14px',
+                  '&:-webkit-autofill': {
+                    WebkitBoxShadow: '0 0 0 1000px white inset',
+                  },
                   '&::placeholder': {
                     color: 'rgba(117, 117, 117, 1)',
                     opacity: 1,
@@ -180,12 +201,36 @@ const Login = () => {
                   height: '50px',
                   padding: '0px 0px 0px 14px',
                   boxSizing: 'border-box',
+                  '&:-webkit-autofill': {
+                    WebkitBoxShadow: '0 0 0 1000px white inset',
+                  },
                   '&::placeholder': {
                     color: 'rgba(117, 117, 117, 1)',
                     opacity: 1,
                   }
                 }
               }}
+            />
+
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  sx={{
+                    color: 'rgba(117, 117, 117, 1)',
+                    '&.Mui-checked': {
+                      color: 'rgba(0, 28, 166, 1)',
+                    },
+                  }}
+                />
+              }
+              label={
+                <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontSize: '14px', color: 'rgba(117, 117, 117, 1)', fontWeight: 500 }}>
+                  Remember me
+                </Typography>
+              }
+              sx={{ alignSelf: 'flex-start', marginTop: '-8px', marginLeft: '4px' }}
             />
           </Box>
 
