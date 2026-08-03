@@ -14,8 +14,14 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const { login } = useAuth();
+  const { user, login, authLoading } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate('/admin/gallery');
+    }
+  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     const savedEmail = localStorage.getItem('rememberedEmail');
@@ -26,6 +32,9 @@ const Login = () => {
       setRememberMe(true);
     }
   }, []);
+
+  // Wait for auth check — if still loading or already logged in, render nothing
+  if (authLoading || user) return null;
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -41,6 +50,8 @@ const Login = () => {
     setLoading(false);
 
     if (result.success) {
+      sessionStorage.setItem('isSessionActive', 'true');
+      localStorage.setItem('rememberMe', rememberMe ? 'true' : 'false');
       if (rememberMe) {
         localStorage.setItem('rememberedEmail', email);
         localStorage.setItem('rememberedPassword', password);

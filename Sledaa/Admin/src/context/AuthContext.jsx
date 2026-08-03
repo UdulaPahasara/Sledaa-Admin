@@ -6,11 +6,22 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const token = localStorage.getItem('jwt_token');
+    const rememberMe = localStorage.getItem('rememberMe') === 'true';
+    const isSessionActive = sessionStorage.getItem('isSessionActive') === 'true';
+
     if (token) {
+      if (!rememberMe && !isSessionActive) {
+        localStorage.removeItem('jwt_token');
+        setAuthLoading(false);
+        return;
+      }
+      sessionStorage.setItem('isSessionActive', 'true');
+
       // Decode the JWT payload and check if it's expired
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
@@ -18,16 +29,15 @@ export const AuthProvider = ({ children }) => {
         if (isExpired) {
           // Token expired — clear it and force re-login
           localStorage.removeItem('jwt_token');
-          navigate('/');
         } else {
           setUser({ role: 'admin' });
         }
       } catch (e) {
         // Malformed token — clear it
         localStorage.removeItem('jwt_token');
-        navigate('/');
       }
     }
+    setAuthLoading(false);
   }, []);
 
   const login = async (email, password) => {
@@ -42,12 +52,13 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('jwt_token');
+    sessionStorage.removeItem('isSessionActive');
     setUser(null);
     navigate('/');
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, authLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
