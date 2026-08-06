@@ -18,7 +18,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public JwtResponse login(LoginRequest loginRequest) {
         if (ADMIN_EMAIL.equals(loginRequest.getEmail()) && ADMIN_PASSWORD.equals(loginRequest.getPassword())) {
-            String jwt = jwtUtils.generateJwtToken(loginRequest.getEmail());
+            String jwt = jwtUtils.generateJwtToken(loginRequest.getEmail(), loginRequest.isRememberMe());
             return new JwtResponse(jwt, loginRequest.getEmail(), "ROLE_ADMIN");
         }
         return null;

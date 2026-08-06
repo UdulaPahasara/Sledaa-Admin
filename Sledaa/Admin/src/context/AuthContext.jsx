@@ -40,8 +40,8 @@ export const AuthProvider = ({ children }) => {
     setAuthLoading(false);
   }, []);
 
-  const login = async (email, password) => {
-    const result = await loginApi(email, password);
+  const login = async (email, password, rememberMe) => {
+    const result = await loginApi(email, password, rememberMe);
     if (result.success) {
       localStorage.setItem('jwt_token', result.data.token);
       setUser({ role: result.data.role, email: result.data.email });

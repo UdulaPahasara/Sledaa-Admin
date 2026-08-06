@@ -46,7 +46,7 @@ const Login = () => {
     }
 
     setLoading(true);
-    const result = await login(email, password);
+    const result = await login(email, password, rememberMe);
     setLoading(false);
 
     if (result.success) {

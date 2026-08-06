@@ -13,13 +13,18 @@ public class JwtUtils {
     private String jwtSecret;
 
     @Value("${sledaa.app.jwtExpirationMs:86400000}")
-    private int jwtExpirationMs;
+    private long jwtExpirationMs;
 
-    public String generateJwtToken(String email) {
+    @Value("${sledaa.app.jwtExpirationMsRememberMe:2592000000}")
+    private long jwtExpirationMsRememberMe;
+
+    public String generateJwtToken(String email, boolean rememberMe) {
+        long expirationTime = rememberMe ? jwtExpirationMsRememberMe : jwtExpirationMs;
+        
         return Jwts.builder()
-                .setSubject((email))
+                .setSubject(email)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
+                .setExpiration(new Date((new Date()).getTime() + expirationTime))
                 .signWith(SignatureAlgorithm.HS256, jwtSecret)
                 .compact();
     }
